@@ -93,6 +93,22 @@ body.drive .driveHint{display:block;position:absolute;bottom:calc(20px + env(saf
 body.drive .driveHint.live{color:var(--ok)}
 body.drive .driveHint.err{color:var(--bad)}
 body.drive .notice{position:fixed;left:16px;right:16px;bottom:80px;z-index:5}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--line);padding:4px;border-radius:14px}
+.tabs button{border:0;background:transparent;padding:9px 6px;font-weight:600;color:var(--muted);border-radius:10px}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.word.long{font-size:clamp(1.6rem,6.5vw,2.3rem);line-height:1.15}
+body.drive .word.long{font-size:clamp(2rem,9vw,3.2rem)}
+.talk{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.talk h2{font-family:var(--display);font-size:1.3rem;margin:0}
+.talk p{margin:0}
+.scen{display:flex;flex-wrap:wrap;gap:8px}
+.scen button{border-radius:999px;padding:8px 14px}
+.scen button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.linkbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:12px;text-align:center}
+textarea{width:100%;box-sizing:border-box;font:inherit;font-size:.85rem;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
+body.mode-c #card,body.mode-c .wrap > .row,body.mode-c #typeForm,body.mode-c .stats,body.mode-c #recentWrap,body.mode-c #driveBtn{display:none!important}
+body.drive .tabs,body.drive .talk{display:none!important}
+[hidden]{display:none!important}
 kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.85em}
 </style>
 
@@ -103,7 +119,29 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     <span class="engine" id="engine">Seite startet nicht? Dann bitte über einen Webbrowser mit https-Adresse öffnen.</span>
   </header>
 
+  <nav class="tabs" aria-label="Übungsart">
+    <button type="button" data-mode="w">Wörter</button>
+    <button type="button" data-mode="p">Arbeitssätze</button>
+    <button type="button" data-mode="c">Gespräch</button>
+  </nav>
+
   <div class="notice" id="notice" hidden></div>
+
+  <section class="talk" id="talk" hidden>
+    <h2>Mit Claude Englisch sprechen</h2>
+    <p class="muted">Claude spielt einen amerikanischen Kollegen, redet mit dir und verbessert kurz, wenn etwas nicht stimmt. Das läuft im Sprachmodus der Claude-App, ohne Zusatzkosten.</p>
+    <div class="scen" id="scen" role="radiogroup" aria-label="Situation"></div>
+    <div class="row">
+      <a class="primary linkbtn" id="talkOpen" href="https://claude.ai/new" target="_blank" rel="noopener">In Claude öffnen</a>
+      <button type="button" id="talkCopy">Anweisung kopieren</button>
+    </div>
+    <ol>
+      <li>„In Claude öffnen“ tippen. Ist das Textfeld dort leer, vorher „Anweisung kopieren“ und dann einfügen.</li>
+      <li>Nachricht abschicken.</li>
+      <li>Auf das Sprachsymbol (die Wellen rechts unten) tippen und einfach losreden.</li>
+    </ol>
+    <details><summary>Anweisung ansehen</summary><div><textarea id="talkPrompt" readonly rows="9"></textarea></div></details>
+  </section>
 
   <section class="card" id="card" aria-live="polite">
     <div class="driveTop"><span id="driveCount"></span><button type="button" id="driveExit">Fahrmodus beenden</button></div>
@@ -903,12 +941,101 @@ der Eindruck|impression
 die Aussage|statement
 die Bedeutung|meaning;importance;significance
 `;
+const PHRASES_RAW = `
+Ich melde mich dazu bei dir.|I'll get back to you on that.;I'll get back to you.
+Kannst du das kurz erklären?|Can you explain that briefly?;Could you explain that quickly?;Can you briefly explain that?
+Das ergibt Sinn.|That makes sense.;Makes sense.
+Ich bin ganz deiner Meinung.|I totally agree.;I completely agree with you.;I fully agree.
+Da bin ich mir nicht sicher.|I'm not sure about that.;I'm not so sure.
+Lass uns das nächste Woche besprechen.|Let's discuss that next week.;Let's talk about it next week.
+Hast du kurz Zeit?|Do you have a minute?;Got a minute?;Do you have a second?
+Ich verstehe, was du meinst.|I see what you mean.;I understand what you mean.;I get what you mean.
+Kannst du das bitte wiederholen?|Could you repeat that, please?;Can you say that again?;Could you say that again?
+Wie ist der aktuelle Stand?|What's the current status?;Where are we on this?;What's the status?
+Wir liegen im Zeitplan.|We're on track.;We're on schedule.
+Wir liegen hinter dem Zeitplan.|We're behind schedule.
+Das hat für uns Priorität.|That's a priority for us.;This is our top priority.
+Ich kümmere mich darum.|I'll take care of it.;I'll handle it.;I'm on it.
+Gute Frage.|Good question.;That's a good question.
+Lass mich kurz nachdenken.|Let me think about it.;Let me think for a second.
+Was schlägst du vor?|What do you suggest?;What would you suggest?
+Ich schlage vor, dass wir warten.|I suggest we wait.;I suggest that we wait.
+Das ist ein guter Punkt.|That's a good point.;Good point.
+Ich sehe das etwas anders.|I see it a bit differently.;I see that a little differently.
+Kannst du mir das per E-Mail schicken?|Can you email me that?;Could you send me that by email?;Could you email that to me?
+Ich schicke dir die Unterlagen.|I'll send you the documents.;I'll send you the files.
+Danke für deine Hilfe.|Thanks for your help.;Thank you for your help.
+Kein Problem.|No problem.;No worries.
+Entschuldige die Verspätung.|Sorry I'm late.;Sorry for the delay.;Sorry for being late.
+Ich bin gleich zurück.|I'll be right back.;Be right back.
+Wann passt es dir?|When works for you?;What time works for you?;When is good for you?
+Passt dir Dienstag?|Does Tuesday work for you?;Is Tuesday okay for you?;How about Tuesday?
+Lass uns einen Termin ausmachen.|Let's set up a meeting.;Let's schedule a meeting.;Let's set up a call.
+Ich muss das Meeting verschieben.|I need to reschedule the meeting.;I have to reschedule the meeting.
+Können wir anfangen?|Shall we get started?;Can we get started?;Can we start?
+Lass uns zum nächsten Punkt kommen.|Let's move on to the next point.;Let's move on.
+Hat noch jemand Fragen?|Any other questions?;Does anyone have any questions?;Any questions?
+Ich fasse kurz zusammen.|Let me sum up.;Let me summarize.;To sum up.
+Was sind die nächsten Schritte?|What are the next steps?
+Wer ist dafür zuständig?|Who's in charge of that?;Who is responsible for that?;Who owns this?
+Ich halte dich auf dem Laufenden.|I'll keep you posted.;I'll keep you updated.;I'll keep you in the loop.
+Das klingt gut.|Sounds good.;That sounds good.;Sounds great.
+Das ist eine gute Idee.|That's a good idea.;Good idea.
+Ich bin nicht überzeugt.|I'm not convinced.
+Wir sollten das im Auge behalten.|We should keep an eye on that.;We should keep an eye on it.
+Das kommt darauf an.|It depends.;That depends.
+Kannst du mir einen Gefallen tun?|Can you do me a favor?;Could you do me a favor?
+Ich habe gerade viel zu tun.|I have a lot on my plate right now.;I'm really busy right now.;I have a lot to do right now.
+Das ist dringend.|This is urgent.;It's urgent.
+Bis wann brauchst du das?|When do you need it by?;When do you need this?
+Ich brauche das bis Freitag.|I need it by Friday.;I need that by Friday.
+Ich arbeite heute von zu Hause.|I'm working from home today.
+Meine Verbindung ist schlecht.|I have a bad connection.;My connection is bad.;My connection is poor.
+Du bist stummgeschaltet.|You're on mute.;You're muted.
+Kannst du deinen Bildschirm teilen?|Can you share your screen?;Could you share your screen?
+Hört ihr mich?|Can you hear me?
+Wie war dein Wochenende?|How was your weekend?
+Hast du Pläne fürs Wochenende?|Any plans for the weekend?;Do you have any plans for the weekend?
+Wie läuft's?|How's it going?;How are things?
+Lange nicht gesehen.|Long time no see.
+Schön, dich kennenzulernen.|Nice to meet you.;It's nice to meet you.
+Woran arbeitest du gerade?|What are you working on right now?;What are you working on?
+Ich freue mich darauf.|I'm looking forward to it.;Looking forward to it.
+Viel Erfolg!|Good luck!;Best of luck!
+Gut gemacht!|Great job!;Good job!;Well done!
+Das war mein Fehler.|My bad.;That was my mistake.;That's my fault.
+Gern geschehen.|You're welcome.;Don't mention it.;No problem.
+Das sehe ich genauso.|I feel the same way.;I agree.;I think so too.
+Lass uns das separat besprechen.|Let's take this offline.;Let's discuss this separately.
+Lass uns kurz telefonieren.|Let's hop on a quick call.;Let's have a quick call.;Let's jump on a call.
+Ich muss leider los.|Sorry, I have to go.;I'm afraid I have to go.;I have to run.
+Bis später!|Talk to you later!;See you later!;Catch you later!
+Schönen Feierabend!|Have a good evening!;Have a nice evening!;Enjoy your evening!
+Schönes Wochenende!|Have a great weekend!;Have a nice weekend!;Have a good weekend!
+Das Budget ist knapp.|The budget is tight.;We're on a tight budget.
+Wir müssen Kosten sparen.|We need to cut costs.;We need to reduce costs.
+Die Frist ist zu knapp.|The deadline is too tight.;The deadline is too short.
+Können wir die Frist verlängern?|Can we extend the deadline?;Could we push the deadline?
+Ich gebe dir bis morgen Bescheid.|I'll let you know by tomorrow.
+Gib mir Bescheid.|Let me know.
+Was meinst du damit?|What do you mean by that?;What do you mean?
+Mach dir keine Sorgen.|Don't worry about it.;Don't worry.;No worries.
+Darf ich kurz unterbrechen?|Sorry to interrupt.;Can I jump in?;May I interrupt for a second?
+Lass uns für heute Schluss machen.|Let's call it a day.;Let's wrap it up for today.
+`;
 const VOCAB = [];
 const byId = new Map();
 for (const line of VOCAB_RAW.trim().split('\n')) {
   const [de, en] = line.split('|');
   if (!de || !en || byId.has(de.trim())) continue;
-  const item = { id: de.trim(), de: de.trim(), en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  const item = { id: de.trim(), de: de.trim(), deck: 'w', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  VOCAB.push(item); byId.set(item.id, item);
+}
+for (const line of PHRASES_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en) continue;
+  const item = { id: 'p:' + de.trim(), de: de.trim(), deck: 'p', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  if (byId.has(item.id)) continue;
   VOCAB.push(item); byId.set(item.id, item);
 }
 
@@ -916,8 +1043,14 @@ for (const line of VOCAB_RAW.trim().split('\n')) {
 const HOMO = [['to','too','two','2'],['no','know'],['right','write'],['see','sea'],['son','sun'],['meet','meat'],['night','knight'],['our','hour'],['flower','flour'],['week','weak'],['read','red'],['buy','by','bye'],['hear','here'],['pear','pair'],['new','knew'],['whole','hole'],['die','dye'],['weather','whether'],['wait','weight'],['ate','eight','8'],['for','four','4'],['won','one','1'],['cell','sell'],['dear','deer'],['wear','where'],['blue','blew'],['hi','high'],['gray','grey'],['neighbor','neighbour'],['color','colour'],['mom','mum'],['tv','tee vee'],['steal','steel'],['sale','sail'],['plane','plain'],['made','maid'],['mail','male'],['bored','board'],['tea','tee'],['bee','be','b'],['eye','i','aye'],['ok','okay'],['pharmacy','farmacy']];
 const CANON = new Map();
 for (const g of HOMO) for (const w of g) CANON.set(w, g[0]);
+function expand(s) {
+  return s.replace(/\bcan't\b/g, 'can not').replace(/\bwon't\b/g, 'will not').replace(/\blet's\b/g, 'let us')
+    .replace(/n't\b/g, ' not').replace(/'re\b/g, ' are').replace(/'ll\b/g, ' will').replace(/'m\b/g, ' am')
+    .replace(/'ve\b/g, ' have').replace(/'d\b/g, ' would')
+    .replace(/\b(it|that|what|how|there|here|he|she|who|where|when|everything|this)'s\b/g, '$1 is');
+}
 function tokens(s) {
-  return s.toLowerCase().replace(/[’`´]/g, "'").replace(/[^a-z0-9' ]+/g, ' ')
+  return expand(s.toLowerCase().replace(/[’`´]/g, "'")).replace(/[^a-z0-9' ]+/g, ' ')
     .split(/\s+/).filter(Boolean).map(t => t.replace(/^'+|'+$/g, '')).filter(Boolean)
     .map(t => CANON.get(t) || t);
 }
@@ -950,6 +1083,23 @@ function matches(text, answers) {
   }
   return false;
 }
+function phraseScore(text, ans) {
+  const t = tokens(text).filter(w => !FILLER.has(w)), a = tokens(ans);
+  if (!t.length || !a.length) return { r: 0, p: 0 };
+  const used = new Array(t.length).fill(false); let m = 0;
+  for (const w of a) {
+    for (let i = 0; i < t.length; i++) {
+      if (used[i]) continue; const x = t[i];
+      if (x === w || stem(x) === stem(w) || (w.length >= 5 && lev(x, w) <= 1)) { used[i] = true; m++; break; }
+    }
+  }
+  return { r: m / a.length, p: m / t.length };
+}
+function isRight(text, item, partial) {
+  if (!item) return false;
+  if (item.deck !== 'p') return matches(text, item.en);
+  return item.en.some(ans => { const { r, p } = phraseScore(text, ans); return partial ? r >= 1 && p >= 0.75 : (r >= 0.8 && p >= 0.6); });
+}
 const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
 const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
 const BLOCK_CMD = ["delete", "remove", "block", "delete word", "remove word", "delete this", "delete that", "remove that", "delete it", "remove it"];
@@ -977,13 +1127,14 @@ function fixOrder() {
 }
 fixOrder();
 function isBlocked(id) { return S.blocked.includes(id); }
+function usable(id) { const it = byId.get(id); return !!it && it.deck === (set.mode === 'p' ? 'p' : 'w') && !S.blocked.includes(id); }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 let lastId = null;
 function pick() {
   S.counter++;
   const now = Date.now(); const learn = [], due = [];
   for (const id in S.words) {
-    if (id === lastId || !byId.has(id) || isBlocked(id)) continue;
+    if (id === lastId || !usable(id)) continue;
     const w = S.words[id];
     if (w.learn) learn.push([id, w]); else if (w.due <= now) due.push([id, w]);
   }
@@ -991,17 +1142,18 @@ function pick() {
   if (learn.length && learn[0][1].dueCard <= S.counter) return learn[0][0];
   if (learn.length >= 8) return learn[0][0];
   if (due.length) { due.sort((a, b) => a[1].due - b[1].due); return due[0][0]; }
-  const nw = S.order.find(id => !S.words[id] && id !== lastId && !isBlocked(id));
+  const nw = S.order.find(id => !S.words[id] && id !== lastId && usable(id));
   if (nw) return nw;
   if (learn.length) return learn[0][0];
   let best = null;
-  for (const id in S.words) { if (id === lastId || !byId.has(id) || isBlocked(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
-  return best || S.order.find(id => !isBlocked(id)) || S.order[0];
+  for (const id in S.words) { if (id === lastId || !usable(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
+  return best || S.order.find(id => usable(id)) || S.order[0];
 }
 const FAST_MS = 3000, SLOW_MS = 6000;
 function grade(id, ok, rt) {
   const now = Date.now(); const isNew = !S.words[id];
-  const speed = rt == null || rt < FAST_MS ? 'fast' : rt < SLOW_MS ? 'mid' : 'slow';
+  const k = byId.get(id) && byId.get(id).deck === 'p' ? 1.8 : 1;
+  const speed = rt == null || rt < FAST_MS * k ? 'fast' : rt < SLOW_MS * k ? 'mid' : 'slow';
   const w = S.words[id] || (S.words[id] = { box: 0, due: 0, learn: false, step: 0, dueCard: 0, right: 0, wrong: 0 });
   w.last = now;
   if (ok) {
@@ -1020,7 +1172,7 @@ function grade(id, ok, rt) {
 
 /* ---------- Einstellungen ---------- */
 const $ = id => document.getElementById(id);
-const set = Object.assign({ speakDe: true, beep: true, voiceEn: '', voiceDe: '', waitSec: 7 }, S.settings || {});
+const set = Object.assign({ mode: 'w', scenario: 'smalltalk', speakDe: true, beep: true, voiceEn: '', voiceDe: '', waitSec: 7 }, S.settings || {});
 function saveSettings() { S.settings = set; save(); }
 $('optSpeakDe').checked = set.speakDe; $('optBeep').checked = set.beep;
 $('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings(); };
@@ -1174,7 +1326,7 @@ function isMuted() { return speaking || Date.now() < quietUntil; }
 function isEcho(text) {
   const now = Date.now();
   if (now - lastSpoken.end < 4000 && matches(text, [lastSpoken.text])) return true;
-  if (now - prevCard.at < 5000 && matches(text, prevCard.en)) return true;
+  if (now - prevCard.at < 5000 && prevCard.item && isRight(text, prevCard.item)) return true;
   return false;
 }
 function showHeard(text, partial) {
@@ -1190,7 +1342,7 @@ function onPartial(text) {
   if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
   const combined = (pending + ' ' + text).trim();
   showHeard(combined, true); armSilence();
-  if (matches(combined, cur.en)) { swallowUntil = Date.now() + 2500; accept(true, combined); }
+  if (isRight(combined, cur, true)) { swallowUntil = Date.now() + 2500; accept(true, combined); }
 }
 function onFinal(alts) {
   alts = alts.map(a => (a || '').trim()).filter(Boolean); if (!alts.length || !running) return;
@@ -1199,7 +1351,7 @@ function onFinal(alts) {
   if (phase !== 'answer') return;
   if (isMuted()) { mutedText = alts[0]; return; }
   markHeard();
-  const ok = alts.find(a => matches((pending + ' ' + a).trim(), cur.en));
+  const ok = alts.find(a => isRight((pending + ' ' + a).trim(), cur));
   if (ok) return accept(true, (pending + ' ' + ok).trim());
   const text = alts[0];
   if (isBlockCmd(text)) return blockByVoice();
@@ -1208,7 +1360,7 @@ function onFinal(alts) {
   if (isPass(text)) return accept(false, '');
   pending = combined; showHeard(combined, false);
   clearTimeout(pendingTimer);
-  pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, 900);
+  pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, cur && cur.deck === 'p' ? 1600 : 900);
 }
 let lastWrong = { id: null, at: 0 };
 async function blockByVoice() {
@@ -1229,7 +1381,7 @@ function blockWord(id) {
 function unblockWord(id) { S.blocked = S.blocked.filter(x => x !== id); save(); renderBlocked(); updateStats(); }
 function renderBlocked() {
   $('blockedCount').textContent = S.blocked.length;
-  $('blockedList').innerHTML = S.blocked.length ? S.blocked.filter(id => byId.has(id)).map(id => '<span class="chip"><i>' + esc(id) + '</i> ' + esc(byId.get(id).en[0]) + ' <button type="button" class="x" data-unblock="' + esc(id) + '" aria-label="Zurückholen">↺</button></span>').join('') : '<span class="muted">Noch keine.</span>';
+  $('blockedList').innerHTML = S.blocked.length ? S.blocked.filter(id => byId.has(id)).map(id => '<span class="chip"><i>' + esc(byId.get(id).de) + '</i> ' + esc(byId.get(id).en[0]) + ' <button type="button" class="x" data-unblock="' + esc(id) + '" aria-label="Zurückholen">↺</button></span>').join('') : '<span class="muted">Noch keine.</span>';
 }
 let readyAt = 0, firstHeardAt = 0;
 function markHeard() { if (!firstHeardAt) firstHeardAt = Math.max(Date.now(), readyAt); }
@@ -1242,19 +1394,20 @@ function armSilence() {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
     accept(false, '');
-  }, set.waitSec * 1000);
+  }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
 function flushMuted() {
   if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
   const t = mutedText; mutedText = '';
   if (isBlockCmd(t)) return blockByVoice();
-  if (matches(t, cur.en)) accept(true, t);
+  if (isRight(t, cur)) accept(true, t);
 }
 function renderWord(item) {
   const m = item.de.match(/^(der|die|das|sich)\s+(.+)$/);
   const w = $('word'); w.innerHTML = '';
   if (m) { const a = document.createElement('span'); a.className = 'art'; a.textContent = m[1]; w.append(a, document.createTextNode(m[2])); }
   else w.textContent = item.de;
+  w.classList.toggle('long', item.deck === 'p');
   const st = S.words[item.id];
   $('tag').textContent = !st ? 'neu' : st.learn ? 'üben' : 'Wiederholung';
 }
@@ -1275,11 +1428,11 @@ async function accept(ok, heard) {
   const item = cur;
   const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
   grade(item.id, ok, rt);
-  prevCard = { en: item.en, at: Date.now() };
+  prevCard = { en: item.en, item, at: Date.now() };
   if (ok) {
     session.right++; beep();
     $('card').className = 'card ok';
-    $('fb').innerHTML = '<span class="okmark">✓ ' + esc(item.en[0]) + '</span><span class="alt">' + (rt / 1000).toFixed(1).replace('.', ',') + ' s' + (rt >= SLOW_MS ? ' · kommt bald wieder' : rt >= FAST_MS ? ' · etwas langsam' : '') + '</span>';
+    $('fb').innerHTML = '<span class="okmark">✓ ' + esc(item.en[0]) + '</span><span class="alt">' + (rt / 1000).toFixed(1).replace('.', ',') + ' s' + (rt >= SLOW_MS * (item.deck === 'p' ? 1.8 : 1) ? ' · kommt bald wieder' : rt >= FAST_MS * (item.deck === 'p' ? 1.8 : 1) ? ' · etwas langsam' : '') + '</span>';
     updateStats();
     await sleep(set.speakDe ? 150 : 350);
   } else {
@@ -1307,14 +1460,15 @@ function renderRecent() {
 function updateStats() {
   setTimeout(driveHint, 0);
   let known = 0, learn = 0;
-  for (const id in S.words) { if (!byId.has(id) || isBlocked(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
-  const seen = VOCAB.filter(v => S.words[v.id] || isBlocked(v.id)).length;
+  for (const id in S.words) { if (!usable(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
+  const deckItems = VOCAB.filter(v => v.deck === (set.mode === 'p' ? 'p' : 'w'));
+  const seen = deckItems.filter(v => S.words[v.id] || isBlocked(v.id)).length;
   $('sRight').textContent = session.right; $('sWrong').textContent = session.wrong;
   const ms = session.activeMs + (running ? Date.now() - session.since : 0);
   const n = session.right + session.wrong;
   $('sWpm').textContent = n >= 3 && ms > 15000 ? (n / (ms / 60000)).toFixed(1).replace('.', ',') : '–';
-  $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = VOCAB.length - seen;
-  $('countInfo').textContent = 'Wortschatz: ' + VOCAB.length + ' Alltagswörter.';
+  $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = deckItems.length - seen;
+  $('countInfo').textContent = 'Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
 }
 function setMic() {
   setTimeout(driveHint, 0);
@@ -1374,6 +1528,46 @@ $('card').addEventListener('click', e => {
   running ? pause() : start();
 });
 if (set.drive) setDrive(true);
+/* ---------- Übungsart und Gesprächsmodus ---------- */
+const TALK_BASE = "Let's practice spoken American English. I'm a German native speaker and I'm getting ready to work with American colleagues. My level is intermediate. Rules: Speak natural, casual American English at a normal pace. Keep each of your turns short, one to three sentences, and end with a question so I keep talking. If I make a clear mistake, first say the corrected version very briefly (\"Better: ...\"), then continue the conversation. If I use a German word because I don't know the English one, tell me the English word and continue. Don't explain grammar unless I ask. ";
+const SCEN = [
+  ['smalltalk', 'Smalltalk mit Kollegen', "Role: You are Mike, an American coworker from Chicago. It's Monday morning and we're chatting by the coffee machine. Start with a casual greeting and ask about my weekend."],
+  ['meeting', 'Meeting', "Role: You are Sarah, a project manager in Austin, running a short project status meeting with me. Ask me for updates, push back politely, and talk about deadlines and next steps. Start the meeting."],
+  ['call', 'Video-Call', "Role: You are Jason, a colleague from our US office, on a video call with me. We need to find a date for a workshop and agree on who prepares what. Start the call."],
+  ['lunch', 'Mittagessen', "Role: You are Emily, a new American colleague. We're having lunch together and getting to know each other: hobbies, family, travel, food. Start the conversation."],
+  ['free', 'Freies Thema', "Role: You are a friendly American conversation partner. Let me choose the topic. Start by asking what I'd like to talk about."]
+];
+function talkPrompt() { const sc = SCEN.find(x => x[0] === set.scenario) || SCEN[0]; return TALK_BASE + sc[2]; }
+function renderTalk() {
+  $('scen').innerHTML = SCEN.map(x => '<button type="button" role="radio" data-scen="' + x[0] + '" aria-checked="' + (x[0] === set.scenario) + '">' + x[1] + '</button>').join('');
+  const p = talkPrompt(); $('talkPrompt').value = p;
+  $('talkOpen').href = 'https://claude.ai/new?q=' + encodeURIComponent(p);
+}
+$('scen').addEventListener('click', e => { const b = e.target.closest('[data-scen]'); if (!b) return; set.scenario = b.dataset.scen; saveSettings(); renderTalk(); });
+$('talkCopy').onclick = () => {
+  const p = talkPrompt(), btn = $('talkCopy');
+  const done = () => { btn.textContent = 'Kopiert'; setTimeout(() => btn.textContent = 'Anweisung kopieren', 2000); };
+  try { navigator.clipboard.writeText(p).then(done, () => { $('talkPrompt').closest('details').open = true; $('talkPrompt').select(); }); }
+  catch (e) { $('talkPrompt').closest('details').open = true; $('talkPrompt').select(); }
+};
+function setMode(m) {
+  if (running) pause();
+  set.mode = m; saveSettings();
+  document.body.classList.toggle('mode-c', m === 'c');
+  $('talk').hidden = m !== 'c';
+  document.querySelectorAll('.tabs [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  lastId = null; cur = null; phase = 'idle';
+  $('card').className = 'card'; $('fb').innerHTML = ''; $('blockBtn').hidden = true;
+  $('word').textContent = m === 'p' ? 'Kannst du das kurz erklären?' : 'Schlüssel';
+  $('word').classList.toggle('long', m === 'p');
+  showHeard(m === 'p' ? 'Drück auf Start und sag den Satz auf Englisch.' : 'Drück auf Start und sag das englische Wort.', false);
+  $('tag').textContent = 'Beispiel';
+  $('startBtn').textContent = 'Start';
+  session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
+  updateStats();
+}
+document.querySelectorAll('.tabs [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+renderTalk(); setMode(set.mode || 'w');
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { running ? pause() : null; }
   else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? pause() : start(); }
@@ -1387,7 +1581,7 @@ $('typeForm').addEventListener('submit', e => {
   }
   if (phase !== 'answer') return;
   if (!v || isPass(v)) return accept(false, '');
-  accept(matches(v, cur.en), v);
+  accept(isRight(v, cur), v);
 });
 $('blockBtn').onclick = () => { if (!cur) return; const id = cur.id; blockWord(id); if (running && phase === 'answer') { phase = 'feedback'; clearTimeout(silenceTimer); try { synth && synth.cancel(); } catch (e) {} next(); } else { $('fb').innerHTML = '<span class="alt">Ausgeblendet</span>'; } };
 document.addEventListener('click', e => {
