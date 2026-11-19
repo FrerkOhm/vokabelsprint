@@ -113,6 +113,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     <div>
       <label class="opt"><input type="checkbox" id="optSpeakDe" checked> Deutsches Wort vorlesen (für Training ohne Hinschauen)</label>
       <label class="opt"><input type="checkbox" id="optBeep" checked> Kurzer Ton bei richtiger Antwort</label>
+      <label class="opt" style="flex-wrap:wrap">Lösung automatisch sagen nach <select id="optWait"><option value="4">4 Sekunden</option><option value="7">7 Sekunden</option><option value="10">10 Sekunden</option><option value="15">15 Sekunden</option><option value="0">nie</option></select></label>
       <label class="opt" style="flex-wrap:wrap">Englische Stimme <select id="voiceEn"></select></label>
       <label class="opt" style="flex-wrap:wrap">Deutsche Stimme <select id="voiceDe"></select></label>
       <div class="row">
@@ -131,7 +132,8 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
         <li>Auf <b>Start</b> drücken und das Mikrofon erlauben.</li>
         <li>Das deutsche Wort erscheint (und wird vorgelesen). Sag einfach das englische Wort, z.&nbsp;B. „key“. Bei Verben geht „go“ oder „to go“.</li>
         <li><b>Richtig:</b> kurzer Ton, sofort das nächste Wort. <b>Falsch:</b> die richtige Antwort wird vorgesagt, danach geht es weiter.</li>
-        <li>Weißt du es nicht, sag „pass“ oder „skip“.</li>
+        <li>Weißt du es nicht, sag „pass“, „help“ oder „skip“. Oder sag einfach nichts: nach 7 Sekunden kommt die Lösung von selbst (einstellbar).</li>
+        <li>Freihändig, z.&nbsp;B. im Auto: „Deutsches Wort vorlesen“ anlassen, Handy per Bluetooth/CarPlay verbinden, Start drücken. Der Bildschirm bleibt an, bitte die Seite offen lassen.</li>
         <li>Falsche Wörter kommen nach wenigen Karten wieder, bis sie sitzen. Wörter, die du gleich konntest, kommen erst nach Tagen wieder.</li>
       </ol>
       <p class="muted">Tipp: Mit Kopfhörern hört das Mikrofon die Sprachausgabe nicht mit. <kbd>Esc</kbd> pausiert. Der Fortschritt wird in diesem Browser gespeichert.</p>
@@ -724,8 +726,9 @@ function matches(text, answers) {
   }
   return false;
 }
-const PASS = ["pass", "skip", "next", "i don't know", "don't know", "dont know", "no idea", "no clue"];
-function isPass(text) { const n = tokens(text).join(' '); return PASS.some(p => n === tokens(p).join(' ')); }
+const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
+const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
+function isPass(text) { const t = tokens(text); const n = t.join(' '); return PASS.some(p => n === tokens(p).join(' ')) || (t.length <= 3 && t.some(w => PASS_WORDS.has(w))); }
 const FILLER = new Set(['uh', 'um', 'uhm', 'hmm', 'hm', 'er', 'erm', 'ah', 'eh', 'ahm', 'mm', 'oh', 'well', 'so', 'okay', 'ok']);
 function isFiller(text) { const t = tokens(text); return !t.length || t.every(w => FILLER.has(w)); }
 
@@ -781,10 +784,12 @@ function grade(id, ok) {
 
 /* ---------- Einstellungen ---------- */
 const $ = id => document.getElementById(id);
-const set = Object.assign({ speakDe: true, beep: true, voiceEn: '', voiceDe: '' }, S.settings || {});
+const set = Object.assign({ speakDe: true, beep: true, voiceEn: '', voiceDe: '', waitSec: 7 }, S.settings || {});
 function saveSettings() { S.settings = set; save(); }
 $('optSpeakDe').checked = set.speakDe; $('optBeep').checked = set.beep;
 $('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings(); };
+$('optWait').value = String(set.waitSec);
+$('optWait').onchange = e => { set.waitSec = +e.target.value; saveSettings(); };
 $('optBeep').onchange = e => { set.beep = e.target.checked; saveSettings(); };
 
 /* ---------- Sprachausgabe ---------- */
@@ -848,7 +853,7 @@ function beep() {
 
 /* ---------- Spracherkennung: Plattform-Diktat oder Web Speech API ---------- */
 let dict = null, dictResolved = false, rec = null, listening = false, wantListen = false, micError = '';
-let dictNoLang = false, recEverStarted = false, needTap = false;
+let dictNoLang = false, recEverStarted = false, needTap = false, restartTries = 0;
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IOS_HELP = IS_IOS
   ? 'Mikrofon nicht erlaubt. Bitte prüfen: 1) Einstellungen → Apps → Safari → Mikrofon auf „Fragen“ oder „Erlauben“. 2) Einstellungen → Allgemein → Tastatur → „Diktierfunktion“ einschalten (Safari braucht sie für die Spracherkennung). 3) Die Seite in Safari selbst öffnen, nicht über das Homescreen-Symbol. Danach Seite neu laden und Start drücken.'
@@ -895,7 +900,7 @@ function startListening() {
   if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
   if (!rec) {
     rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
-    rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); };
+    rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
     rec.onresult = e => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -907,13 +912,13 @@ function startListening() {
     };
     rec.onerror = e => {
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        if (recEverStarted && running) { needTap = true; setMic(); return; }
+        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
         micError = IOS_HELP; wantListen = false; pause();
       }
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { needTap = true; setMic(); } }, 120); };
+    rec.onend = () => { listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
@@ -946,7 +951,7 @@ function onPartial(text) {
   if (isMuted()) { mutedText = text; return; }
   if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
   const combined = (pending + ' ' + text).trim();
-  showHeard(combined, true);
+  showHeard(combined, true); armSilence();
   if (matches(combined, cur.en)) { swallowUntil = Date.now() + 2500; accept(true, combined); }
 }
 function onFinal(alts) {
@@ -964,6 +969,17 @@ function onFinal(alts) {
   pending = combined; showHeard(combined, false);
   clearTimeout(pendingTimer);
   pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, 900);
+}
+let silenceTimer = null;
+function armSilence() {
+  clearTimeout(silenceTimer);
+  if (!set.waitSec || !running || phase !== 'answer') return;
+  const item = cur;
+  silenceTimer = setTimeout(() => {
+    if (!running || phase !== 'answer' || cur !== item) return;
+    if (isMuted() || pending || pendingTimer) { armSilence(); return; }
+    accept(false, '');
+  }, set.waitSec * 1000);
 }
 function flushMuted() {
   if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
@@ -985,11 +1001,13 @@ async function next() {
   $('card').className = 'card'; $('fb').innerHTML = ''; showHeard('', false);
   renderWord(cur); phase = 'answer';
   updateStats();
+  const myItem = cur;
   if (set.speakDe) await say(cur.de, 'de');
+  if (cur === myItem && phase === 'answer') armSilence();
 }
 async function accept(ok, heard) {
   if (phase !== 'answer' || !cur) return;
-  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = '';
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
   const item = cur;
   grade(item.id, ok);
   prevCard = { en: item.en, at: Date.now() };
@@ -1046,13 +1064,15 @@ function setMic() {
 }
 function showNotice(msg) { const n = $('notice'); n.hidden = !msg; n.textContent = msg; }
 let wakeLock = null;
+function requestWake() { try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => wakeLock = l).catch(() => {}); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running) requestWake(); });
 function start() {
   if (running) return;
   try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) {}
   running = true; session.since = Date.now();
   startListening();
   $('startBtn').textContent = 'Pause';
-  try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => wakeLock = l).catch(() => {}); } catch (e) {}
+  requestWake();
   setMic(); next();
 }
 function pause() {
