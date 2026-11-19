@@ -69,23 +69,50 @@ select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);
 .danger{color:var(--bad);border-color:var(--bad)}
 .notice{background:var(--bad-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:.9rem}
 ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+header .driveBtn{margin-left:auto;padding:6px 12px;font-size:.85rem}
+.driveTop,.driveHint{display:none}
+body.drive{
+  --bg:#000000; --surface:#0a0d14; --ink:#ffffff; --muted:#9aa6bd; --line:#1f2738;
+  --accent:#7aa0ff; --accent-ink:#000000; --ok:#45e09a; --ok-soft:#0f2e20; --bad:#ff7a6e; --bad-soft:#3a1714; color-scheme:dark;
+  padding-block:0; height:100%;
+}
+body.drive .wrap{max-width:none;height:100%;gap:0}
+body.drive header,body.drive .stats,body.drive details,body.drive #recentWrap,body.drive form,body.drive .row,body.drive #blockBtn,body.drive .label{display:none!important}
+body.drive .card{flex:1;min-height:100vh;min-height:100dvh;border:0;border-radius:0;background:var(--bg);justify-content:center;align-items:center;text-align:center;gap:24px;padding:24px 0;cursor:pointer;user-select:none;-webkit-user-select:none}
+body.drive .card.ok{box-shadow:0 0 0 10px var(--ok) inset}
+body.drive .card.bad{box-shadow:0 0 0 10px var(--bad) inset}
+body.drive .word{font-size:clamp(3rem,15vw,6rem)}
+body.drive .word .art{display:block;margin:0 0 .2em}
+body.drive .heard{font-size:1.2rem}
+body.drive .fb{justify-content:center;min-height:4rem}
+body.drive .fb .sol{font-size:clamp(2rem,9vw,3.5rem);padding:8px 20px}
+body.drive .fb .okmark{font-size:1.8rem}
+body.drive .driveTop{display:flex;position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:0;right:0;justify-content:space-between;align-items:center;color:var(--muted);font-size:1rem}
+body.drive .driveTop button{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:.95rem}
+body.drive .driveHint{display:block;position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:0;right:0;font-size:1.3rem;font-weight:600;color:var(--muted)}
+body.drive .driveHint.live{color:var(--ok)}
+body.drive .driveHint.err{color:var(--bad)}
+body.drive .notice{position:fixed;left:16px;right:16px;bottom:80px;z-index:5}
 kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.85em}
 </style>
 
 <div class="wrap">
   <header>
     <h1>Vokabelsprint</h1>
+    <button type="button" class="driveBtn" id="driveBtn">Fahrmodus</button>
     <span class="engine" id="engine">Seite startet nicht? Dann bitte über einen Webbrowser mit https-Adresse öffnen.</span>
   </header>
 
   <div class="notice" id="notice" hidden></div>
 
   <section class="card" id="card" aria-live="polite">
+    <div class="driveTop"><span id="driveCount"></span><button type="button" id="driveExit">Fahrmodus beenden</button></div>
     <div class="label"><span>Deutsch → Englisch</span><span id="tag"></span></div>
     <div class="word" id="word"><span class="art">z.&nbsp;B.</span>Schlüssel</div>
     <div class="heard" id="heard">Drück auf Start und sag das englische Wort.</div>
     <div class="fb" id="fb"></div>
     <button type="button" class="ghost" id="blockBtn" hidden>Dieses Wort ausblenden</button>
+    <div class="driveHint" id="driveHint">Tippen zum Starten</div>
   </section>
 
   <div class="row">
@@ -190,7 +217,7 @@ das Fenster|window
 der Tisch|table;desk
 der Stuhl|chair
 das Bett|bed
-der Schrank|cupboard;wardrobe;closet;cabinet
+der Schrank|closet;cabinet;cupboard;wardrobe
 das Sofa|sofa;couch
 die Lampe|lamp
 der Schlüssel|key
@@ -251,7 +278,7 @@ die Gabel|fork
 das Messer|knife
 der Löffel|spoon
 die Flasche|bottle
-die Rechnung|bill;check;invoice
+die Rechnung|check;bill;invoice
 das Trinkgeld|tip
 die Speisekarte|menu
 der Kopf|head
@@ -277,7 +304,7 @@ die Haut|skin
 das Blut|blood
 die Kleidung|clothes;clothing
 das Hemd|shirt
-die Hose|trousers;pants
+die Hose|pants;trousers
 der Rock|skirt
 das Kleid|dress
 die Jacke|jacket
@@ -312,8 +339,8 @@ die Schule|school
 das Krankenhaus|hospital
 die Apotheke|pharmacy;drugstore;chemist
 die Bank|bank;bench
-die Post|post office;mail;post
-der Laden|shop;store
+die Post|mail;post office;post
+der Laden|store;shop
 der Markt|market
 die Ecke|corner
 die Ampel|traffic light;traffic lights
@@ -393,7 +420,7 @@ der Sonntag|sunday
 der Sommer|summer
 der Winter|winter
 der Frühling|spring
-der Herbst|autumn;fall
+der Herbst|fall;autumn
 der Geburtstag|birthday
 gehen|go;walk
 kommen|come
@@ -677,7 +704,7 @@ die Grenze|border;limit
 der Gast|guest
 der Kunde|customer;client
 der Chef|boss
-der Kollege|colleague;coworker
+der Kollege|coworker;colleague
 der Lehrer|teacher
 der Schüler|student;pupil
 der Kellner|waiter
@@ -1009,8 +1036,8 @@ function bestVoice(lang) {
   const pref = set[lang === 'en' ? 'voiceEn' : 'voiceDe'];
   const list = voicesFor(lang);
   return list.find(v => v.voiceURI === pref) ||
-    list.find(v => /google|natural|premium|enhanced|neural/i.test(v.name) && (lang !== 'en' || /us|gb/i.test(v.lang))) ||
-    list.find(v => lang !== 'en' || /en-us/i.test(v.lang.replace('_', '-'))) || list[0] || null;
+    (lang === 'en' ? (us => us.find(v => /google|natural|premium|enhanced|neural|siri/i.test(v.name)) || us.find(v => /samantha|alex|allison|ava|tom|aaron|nicky/i.test(v.name)) || us[0])(list.filter(v => /en-us/i.test(v.lang.replace('_', '-')))) : null) ||
+    list.find(v => /google|natural|premium|enhanced|neural/i.test(v.name)) || list[0] || null;
 }
 function fillVoices() {
   if (!synth) return;
@@ -1070,8 +1097,9 @@ const IOS_HELP = IS_IOS
 // Safari darf das Mikrofon manchmal nur nach einem Antippen wieder einschalten
 document.addEventListener('pointerdown', e => {
   if (!needTap || !running || !rec || e.target.closest('#startBtn')) return;
-  needTap = false; try { rec.start(); } catch (err) {} setMic();
+  needTap = false; tapConsumedAt = Date.now(); try { rec.start(); } catch (err) {} setMic();
 }, true);
+let tapConsumedAt = 0;
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function engineLabel() {
   $('engine').textContent = dict ? 'Spracherkennung: Claude-Diktat' : SR ? 'Spracherkennung: Browser' : 'Keine Spracherkennung, bitte tippen';
@@ -1277,6 +1305,7 @@ function renderRecent() {
   $('recent').innerHTML = list.map(it => '<span class="chip"><i>' + esc(it.de) + '</i> ' + esc(it.en[0]) + ' <button type="button" class="x" data-block="' + esc(it.id) + '" aria-label="Wort ausblenden">✕</button></span>').join('');
 }
 function updateStats() {
+  setTimeout(driveHint, 0);
   let known = 0, learn = 0;
   for (const id in S.words) { if (!byId.has(id) || isBlocked(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
   const seen = VOCAB.filter(v => S.words[v.id] || isBlocked(v.id)).length;
@@ -1288,6 +1317,7 @@ function updateStats() {
   $('countInfo').textContent = 'Wortschatz: ' + VOCAB.length + ' Alltagswörter.';
 }
 function setMic() {
+  setTimeout(driveHint, 0);
   const dot = $('dot'), t = $('micText');
   dot.className = 'dot';
   if (micError) { dot.classList.add('err'); t.textContent = 'Mikrofon aus'; showNotice(micError); }
@@ -1323,6 +1353,27 @@ function pause() {
   setMic(); updateStats();
 }
 $('startBtn').addEventListener('click', () => running ? pause() : start());
+function driveHint() {
+  const h = $('driveHint'); h.className = 'driveHint';
+  if (micError) { h.classList.add('err'); h.textContent = 'Mikrofon aus · Tippen zum Starten'; return; }
+  if (!running) { h.textContent = session.right + session.wrong ? 'Pausiert · Tippen zum Weitermachen' : 'Tippen zum Starten'; return; }
+  if (needTap) { h.classList.add('err'); h.textContent = 'Kurz tippen, Mikrofon ist aus'; return; }
+  h.classList.add('live'); h.textContent = speaking ? 'Spricht …' : listening ? 'Hört zu · Tippen = Pause' : 'Mikrofon startet …';
+  $('driveCount').textContent = '✓ ' + session.right + '   ✕ ' + session.wrong;
+}
+function setDrive(on) {
+  document.body.classList.toggle('drive', on); set.drive = on; saveSettings();
+  if (on) { set.speakDe = true; $('optSpeakDe').checked = true; saveSettings(); }
+  driveHint();
+}
+$('driveBtn').onclick = () => setDrive(true);
+$('driveExit').onclick = e => { e.stopPropagation(); setDrive(false); };
+$('card').addEventListener('click', e => {
+  if (!document.body.classList.contains('drive')) return;
+  if (Date.now() - tapConsumedAt < 600) return;
+  running ? pause() : start();
+});
+if (set.drive) setDrive(true);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { running ? pause() : null; }
   else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? pause() : start(); }
