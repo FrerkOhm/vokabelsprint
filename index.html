@@ -57,6 +57,9 @@ input[type=text]{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius
 .recent{display:flex;flex-wrap:wrap;gap:6px;font-size:.85rem}
 .chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
 .chip i{font-style:normal;color:var(--muted)}
+.chip .x{border:0;background:none;padding:0 2px;color:var(--muted);font-size:.9em;line-height:1}
+.chip .x:hover{color:var(--bad)}
+.ghost{align-self:flex-start;border:0;background:none;color:var(--muted);padding:2px 0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
 details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
 summary{cursor:pointer;font-weight:600}
 details > div{display:flex;flex-direction:column;gap:12px;padding-top:12px}
@@ -82,6 +85,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     <div class="word" id="word"><span class="art">z.&nbsp;B.</span>Schlüssel</div>
     <div class="heard" id="heard">Drück auf Start und sag das englische Wort.</div>
     <div class="fb" id="fb"></div>
+    <button type="button" class="ghost" id="blockBtn" hidden>Dieses Wort ausblenden</button>
   </section>
 
   <div class="row">
@@ -109,6 +113,14 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
   </div>
 
   <details>
+    <summary>Ausgeblendete Wörter (<span id="blockedCount">0</span>)</summary>
+    <div>
+      <p class="muted">Diese Wörter werden nicht mehr abgefragt. Mit ↺ holst du eins zurück.</p>
+      <div class="recent" id="blockedList"></div>
+    </div>
+  </details>
+
+  <details>
     <summary>Einstellungen</summary>
     <div>
       <label class="opt"><input type="checkbox" id="optSpeakDe" checked> Deutsches Wort vorlesen (für Training ohne Hinschauen)</label>
@@ -134,6 +146,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
         <li><b>Richtig:</b> kurzer Ton, sofort das nächste Wort. <b>Falsch:</b> die richtige Antwort wird vorgesagt, danach geht es weiter.</li>
         <li>Weißt du es nicht, sag „pass“, „help“ oder „skip“. Oder sag einfach nichts: nach 7 Sekunden kommt die Lösung von selbst (einstellbar).</li>
         <li>Freihändig, z.&nbsp;B. im Auto: „Deutsches Wort vorlesen“ anlassen, Handy per Bluetooth/CarPlay verbinden, Start drücken. Der Bildschirm bleibt an, bitte die Seite offen lassen.</li>
+        <li>Ein Wort wird nie erkannt? Sag „delete“ (gleich nachdem die Lösung kam) oder tippe auf „Dieses Wort ausblenden“ bzw. das ✕ unter „Zuletzt falsch“. Es kommt dann nicht mehr dran.</li>
         <li>Falsche Wörter kommen nach wenigen Karten wieder, bis sie sitzen. Wörter, die du gleich konntest, kommen erst nach Tagen wieder.</li>
       </ol>
       <p class="muted">Tipp: Mit Kopfhörern hört das Mikrofon die Sprachausgabe nicht mit. <kbd>Esc</kbd> pausiert. Der Fortschritt wird in diesem Browser gespeichert.</p>
@@ -710,6 +723,7 @@ function lev(a, b) {
   }
   return prev[n];
 }
+function stem(w) { return w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w; }
 function matches(text, answers) {
   const t = tokens(text); if (!t.length) return false;
   for (const ans of answers) {
@@ -720,7 +734,7 @@ function matches(text, answers) {
     for (let size = Math.max(1, a.length - 1); size <= a.length + 1; size++) {
       for (let i = 0; i + size <= t.length; i++) {
         const w = t.slice(i, i + size).join('');
-        if (w === target || (tol && Math.abs(w.length - target.length) <= tol && lev(w, target) <= tol)) return true;
+        if (w === target || stem(w) === stem(target) || (tol && Math.abs(w.length - target.length) <= tol && lev(w, target) <= tol)) return true;
       }
     }
   }
@@ -728,6 +742,8 @@ function matches(text, answers) {
 }
 const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
 const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
+const BLOCK_CMD = ["delete", "remove", "block", "delete word", "remove word", "delete this", "delete that", "remove that", "delete it", "remove it"];
+function isBlockCmd(text) { const n = tokens(text).join(' '); return BLOCK_CMD.some(p => n === p); }
 function isPass(text) { const t = tokens(text); const n = t.join(' '); return PASS.some(p => n === tokens(p).join(' ')) || (t.length <= 3 && t.some(w => PASS_WORDS.has(w))); }
 const FILLER = new Set(['uh', 'um', 'uhm', 'hmm', 'hm', 'er', 'erm', 'ah', 'eh', 'ahm', 'mm', 'oh', 'well', 'so', 'okay', 'ok']);
 function isFiller(text) { const t = tokens(text); return !t.length || t.every(w => FILLER.has(w)); }
@@ -736,7 +752,7 @@ function isFiller(text) { const t = tokens(text); return !t.length || t.every(w 
 const KEY = 'vokabelsprint.v1';
 const MIN = 60e3, DAY = 864e5;
 const IVL = [0, 10 * MIN, DAY, 3 * DAY, 7 * DAY, 16 * DAY, 35 * DAY, 90 * DAY];
-let S = { words: {}, counter: 0, order: [], settings: {} };
+let S = { words: {}, counter: 0, order: [], settings: {}, blocked: [] };
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.words) S = Object.assign(S, s); } catch (e) {}
 function fixOrder() {
   const have = new Set(S.order.filter(id => byId.has(id)));
@@ -746,13 +762,14 @@ function fixOrder() {
   S.order.push(...fresh);
 }
 fixOrder();
+function isBlocked(id) { return S.blocked.includes(id); }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 let lastId = null;
 function pick() {
   S.counter++;
   const now = Date.now(); const learn = [], due = [];
   for (const id in S.words) {
-    if (id === lastId || !byId.has(id)) continue;
+    if (id === lastId || !byId.has(id) || isBlocked(id)) continue;
     const w = S.words[id];
     if (w.learn) learn.push([id, w]); else if (w.due <= now) due.push([id, w]);
   }
@@ -760,12 +777,12 @@ function pick() {
   if (learn.length && learn[0][1].dueCard <= S.counter) return learn[0][0];
   if (learn.length >= 8) return learn[0][0];
   if (due.length) { due.sort((a, b) => a[1].due - b[1].due); return due[0][0]; }
-  const nw = S.order.find(id => !S.words[id] && id !== lastId);
+  const nw = S.order.find(id => !S.words[id] && id !== lastId && !isBlocked(id));
   if (nw) return nw;
   if (learn.length) return learn[0][0];
   let best = null;
-  for (const id in S.words) { if (id === lastId || !byId.has(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
-  return best || S.order[0];
+  for (const id in S.words) { if (id === lastId || !byId.has(id) || isBlocked(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
+  return best || S.order.find(id => !isBlocked(id)) || S.order[0];
 }
 function grade(id, ok) {
   const now = Date.now(); const isNew = !S.words[id];
@@ -963,12 +980,34 @@ function onFinal(alts) {
   const ok = alts.find(a => matches((pending + ' ' + a).trim(), cur.en));
   if (ok) return accept(true, (pending + ' ' + ok).trim());
   const text = alts[0];
+  if (isBlockCmd(text)) return blockByVoice();
   if (isEcho(text) || isFiller(text)) return;
   const combined = (pending + ' ' + text).trim();
   if (isPass(text)) return accept(false, '');
   pending = combined; showHeard(combined, false);
   clearTimeout(pendingTimer);
   pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, 900);
+}
+let lastWrong = { id: null, at: 0 };
+async function blockByVoice() {
+  if (!cur) return;
+  const target = (lastWrong.id && lastWrong.id !== cur.id && Date.now() - lastWrong.at < 8000) ? lastWrong.id : cur.id;
+  const item = byId.get(target);
+  blockWord(target);
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
+  $('card').className = 'card'; $('fb').innerHTML = '<span class="alt">Ausgeblendet: ' + esc(item.de) + '</span>';
+  await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, ''), 'de');
+  if (running) next();
+}
+function blockWord(id) {
+  if (!isBlocked(id)) S.blocked.push(id);
+  for (let i = recentWrong.length - 1; i >= 0; i--) if (recentWrong[i].id === id) recentWrong.splice(i, 1);
+  save(); renderRecent(); renderBlocked(); updateStats();
+}
+function unblockWord(id) { S.blocked = S.blocked.filter(x => x !== id); save(); renderBlocked(); updateStats(); }
+function renderBlocked() {
+  $('blockedCount').textContent = S.blocked.length;
+  $('blockedList').innerHTML = S.blocked.length ? S.blocked.filter(id => byId.has(id)).map(id => '<span class="chip"><i>' + esc(id) + '</i> ' + esc(byId.get(id).en[0]) + ' <button type="button" class="x" data-unblock="' + esc(id) + '" aria-label="Zurückholen">↺</button></span>').join('') : '<span class="muted">Noch keine.</span>';
 }
 let silenceTimer = null;
 function armSilence() {
@@ -984,6 +1023,7 @@ function armSilence() {
 function flushMuted() {
   if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
   const t = mutedText; mutedText = '';
+  if (isBlockCmd(t)) return blockByVoice();
   if (matches(t, cur.en)) accept(true, t);
 }
 function renderWord(item) {
@@ -999,7 +1039,7 @@ async function next() {
   const id = pick(); lastId = id; cur = byId.get(id);
   pending = ''; mutedText = ''; clearTimeout(pendingTimer); pendingTimer = null;
   $('card').className = 'card'; $('fb').innerHTML = ''; showHeard('', false);
-  renderWord(cur); phase = 'answer';
+  renderWord(cur); phase = 'answer'; $('blockBtn').hidden = false;
   updateStats();
   const myItem = cur;
   if (set.speakDe) await say(cur.de, 'de');
@@ -1018,7 +1058,7 @@ async function accept(ok, heard) {
     updateStats();
     await sleep(set.speakDe ? 150 : 350);
   } else {
-    session.wrong++;
+    session.wrong++; lastWrong = { id: item.id, at: Date.now() };
     $('card').className = 'card bad';
     const others = item.en.slice(1, 4);
     $('fb').innerHTML = '<span class="sol">' + esc(item.en[0]) + '</span>' + (others.length ? '<span class="alt">auch: ' + others.map(esc).join(', ') + '</span>' : '');
@@ -1037,12 +1077,12 @@ function renderRecent() {
   for (const it of recentWrong) { if (seen.has(it.id)) continue; seen.add(it.id); list.push(it); if (list.length >= 8) break; }
   recentWrong.length = 0; recentWrong.push(...list);
   $('recentWrap').hidden = !list.length;
-  $('recent').innerHTML = list.map(it => '<span class="chip"><i>' + esc(it.de) + '</i> ' + esc(it.en[0]) + '</span>').join('');
+  $('recent').innerHTML = list.map(it => '<span class="chip"><i>' + esc(it.de) + '</i> ' + esc(it.en[0]) + ' <button type="button" class="x" data-block="' + esc(it.id) + '" aria-label="Wort ausblenden">✕</button></span>').join('');
 }
 function updateStats() {
   let known = 0, learn = 0;
-  for (const id in S.words) { if (!byId.has(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
-  const seen = Object.keys(S.words).filter(id => byId.has(id)).length;
+  for (const id in S.words) { if (!byId.has(id) || isBlocked(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
+  const seen = VOCAB.filter(v => S.words[v.id] || isBlocked(v.id)).length;
   $('sRight').textContent = session.right; $('sWrong').textContent = session.wrong;
   const ms = session.activeMs + (running ? Date.now() - session.since : 0);
   const n = session.right + session.wrong;
@@ -1101,12 +1141,17 @@ $('typeForm').addEventListener('submit', e => {
   if (!v || isPass(v)) return accept(false, '');
   accept(matches(v, cur.en), v);
 });
+$('blockBtn').onclick = () => { if (!cur) return; const id = cur.id; blockWord(id); if (running && phase === 'answer') { phase = 'feedback'; clearTimeout(silenceTimer); try { synth && synth.cancel(); } catch (e) {} next(); } else { $('fb').innerHTML = '<span class="alt">Ausgeblendet</span>'; } };
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-block]'); if (b) { blockWord(b.dataset.block); return; }
+  const u = e.target.closest('[data-unblock]'); if (u) unblockWord(u.dataset.unblock);
+});
 $('resetBtn').onclick = () => { $('resetConfirm').hidden = false; };
 $('resetNo').onclick = () => { $('resetConfirm').hidden = true; };
 $('resetYes').onclick = () => {
-  pause(); S.words = {}; S.counter = 0; S.order = []; fixOrder(); save(); session = { right: 0, wrong: 0, activeMs: 0, since: 0 }; recentWrong.length = 0; renderRecent(); $('resetConfirm').hidden = true; $('startBtn').textContent = 'Start'; updateStats();
+  pause(); S.words = {}; S.counter = 0; S.order = []; S.blocked = []; fixOrder(); renderBlocked(); save(); session = { right: 0, wrong: 0, activeMs: 0, since: 0 }; recentWrong.length = 0; renderRecent(); $('resetConfirm').hidden = true; $('startBtn').textContent = 'Start'; updateStats();
 };
 setInterval(() => { if (running) updateStats(); }, 5000);
-updateStats(); setMic();
+renderBlocked(); updateStats(); setMic();
 </script>
 </body></html>
