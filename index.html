@@ -848,7 +848,16 @@ function beep() {
 
 /* ---------- Spracherkennung: Plattform-Diktat oder Web Speech API ---------- */
 let dict = null, dictResolved = false, rec = null, listening = false, wantListen = false, micError = '';
-let dictNoLang = false;
+let dictNoLang = false, recEverStarted = false, needTap = false;
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IOS_HELP = IS_IOS
+  ? 'Mikrofon nicht erlaubt. Bitte prüfen: 1) Einstellungen → Apps → Safari → Mikrofon auf „Fragen“ oder „Erlauben“. 2) Einstellungen → Allgemein → Tastatur → „Diktierfunktion“ einschalten (Safari braucht sie für die Spracherkennung). 3) Die Seite in Safari selbst öffnen, nicht über das Homescreen-Symbol. Danach Seite neu laden und Start drücken.'
+  : 'Mikrofon nicht erlaubt. Bitte in der Adressleiste beim Schloss-Symbol das Mikrofon erlauben und die Seite neu laden. Du kannst die Antworten auch tippen.';
+// Safari darf das Mikrofon manchmal nur nach einem Antippen wieder einschalten
+document.addEventListener('pointerdown', e => {
+  if (!needTap || !running || !rec || e.target.closest('#startBtn')) return;
+  needTap = false; try { rec.start(); } catch (err) {} setMic();
+}, true);
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function engineLabel() {
   $('engine').textContent = dict ? 'Spracherkennung: Claude-Diktat' : SR ? 'Spracherkennung: Browser' : 'Keine Spracherkennung, bitte tippen';
@@ -886,7 +895,7 @@ function startListening() {
   if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
   if (!rec) {
     rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
-    rec.onstart = () => { listening = true; setMic(); };
+    rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); };
     rec.onresult = e => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -897,11 +906,14 @@ function startListening() {
       if (interim) onPartial(interim);
     };
     rec.onerror = e => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { micError = 'Mikrofon nicht erlaubt. Du kannst die Antworten tippen.'; wantListen = false; pause(); }
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        if (recEverStarted && running) { needTap = true; setMic(); return; }
+        micError = IOS_HELP; wantListen = false; pause();
+      }
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { listening = false; setMic(); if (wantListen && running) setTimeout(() => { try { rec.start(); } catch (e) {} }, 120); };
+    rec.onend = () => { listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { needTap = true; setMic(); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
@@ -1028,6 +1040,7 @@ function setMic() {
   if (micError) return;
   if (!running) { t.textContent = 'Pausiert'; return; }
   if (speaking) { dot.classList.add('talk'); t.textContent = 'Spricht …'; return; }
+  if (needTap) { dot.classList.add('err'); t.textContent = 'Antippen, um weiterzusprechen'; return; }
   if (listening) { dot.classList.add('on'); t.textContent = 'Hört zu'; return; }
   t.textContent = wantListen ? 'Mikrofon startet …' : 'Nur Tippen';
 }
