@@ -59,6 +59,9 @@ input[type=text]{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius
 .chip i{font-style:normal;color:var(--muted)}
 .chip .x{border:0;background:none;padding:0 2px;color:var(--muted);font-size:.9em;line-height:1}
 .chip .x:hover{color:var(--bad)}
+.delbtn{align-self:stretch;border:2px solid var(--bad);color:var(--bad);background:transparent;font-weight:600;font-size:1.05rem;padding:12px;border-radius:12px}
+body.drive .delbtn{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));font-size:1.4rem;padding:20px;border-width:3px}
+body.drive .driveHint{bottom:calc(110px + env(safe-area-inset-bottom,0px))!important}
 .ghost{align-self:flex-start;border:0;background:none;color:var(--muted);padding:2px 0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
 details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
 summary{cursor:pointer;font-weight:600}
@@ -77,8 +80,8 @@ body.drive{
   padding-block:0; height:100%;
 }
 body.drive .wrap{max-width:none;height:100%;gap:0}
-body.drive header,body.drive .stats,body.drive details,body.drive #recentWrap,body.drive form,body.drive .row,body.drive #blockBtn,body.drive .label{display:none!important}
-body.drive .card{flex:1;min-height:100vh;min-height:100dvh;border:0;border-radius:0;background:var(--bg);justify-content:center;align-items:center;text-align:center;gap:24px;padding:24px 0;cursor:pointer;user-select:none;-webkit-user-select:none}
+body.drive header,body.drive .stats,body.drive details,body.drive #recentWrap,body.drive form,body.drive .row,body.drive .label{display:none!important}
+body.drive .card{box-sizing:border-box;flex:1;min-height:100vh;min-height:100dvh;border:0;border-radius:0;background:var(--bg);justify-content:center;align-items:center;text-align:center;gap:24px;padding:24px 0;cursor:pointer;user-select:none;-webkit-user-select:none}
 body.drive .card.ok{box-shadow:0 0 0 10px var(--ok) inset}
 body.drive .card.bad{box-shadow:0 0 0 10px var(--bad) inset}
 body.drive .word{font-size:clamp(3rem,15vw,6rem)}
@@ -93,9 +96,10 @@ body.drive .driveHint{display:block;position:absolute;bottom:calc(20px + env(saf
 body.drive .driveHint.live{color:var(--ok)}
 body.drive .driveHint.err{color:var(--bad)}
 body.drive .notice{position:fixed;left:16px;right:16px;bottom:80px;z-index:5}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--line);padding:4px;border-radius:14px}
-.tabs button{border:0;background:transparent;padding:9px 6px;font-weight:600;color:var(--muted);border-radius:10px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--line);padding:4px;border-radius:14px}
+.tabs button{border:0;background:transparent;padding:9px 2px;font-size:.88rem;min-width:0;font-weight:600;color:var(--muted);border-radius:10px}
 .tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.word .hint{display:block;font-size:.4em;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:.3em}
 .word.long{font-size:clamp(1.6rem,6.5vw,2.3rem);line-height:1.15}
 body.drive .word.long{font-size:clamp(2rem,9vw,3.2rem)}
 .talk{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
@@ -122,6 +126,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
   <nav class="tabs" aria-label="Übungsart">
     <button type="button" data-mode="w">Wörter</button>
     <button type="button" data-mode="p">Arbeitssätze</button>
+    <button type="button" data-mode="t">Technik</button>
     <button type="button" data-mode="c">Gespräch</button>
   </nav>
 
@@ -149,7 +154,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     <div class="word" id="word"><span class="art">z.&nbsp;B.</span>Schlüssel</div>
     <div class="heard" id="heard">Drück auf Start und sag das englische Wort.</div>
     <div class="fb" id="fb"></div>
-    <button type="button" class="ghost" id="blockBtn" hidden>Dieses Wort ausblenden</button>
+    <button type="button" class="delbtn" id="blockBtn" hidden>✕ Wort löschen</button>
     <div class="driveHint" id="driveHint">Tippen zum Starten</div>
   </section>
 
@@ -211,7 +216,8 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
         <li><b>Richtig:</b> kurzer Ton, sofort das nächste Wort. <b>Falsch:</b> die richtige Antwort wird vorgesagt, danach geht es weiter.</li>
         <li>Weißt du es nicht, sag „pass“, „help“ oder „skip“. Oder sag einfach nichts: nach 7 Sekunden kommt die Lösung von selbst (einstellbar).</li>
         <li>Freihändig, z.&nbsp;B. im Auto: „Deutsches Wort vorlesen“ anlassen, Handy per Bluetooth/CarPlay verbinden, Start drücken. Der Bildschirm bleibt an, bitte die Seite offen lassen.</li>
-        <li>Ein Wort wird nie erkannt? Sag „delete“ (gleich nachdem die Lösung kam) oder tippe auf „Dieses Wort ausblenden“ bzw. das ✕ unter „Zuletzt falsch“. Es kommt dann nicht mehr dran.</li>
+        <li>Im Fahrmodus beendest du die Übung mit „end session“ (oder „stop session“, „I'm done“).</li>
+        <li>Ein Wort wird nie erkannt? Sag „delete“ (gleich nachdem die Lösung kam) oder tippe auf den roten Knopf „✕ Wort löschen“ bzw. das ✕ unter „Zuletzt falsch“. Es kommt dann nicht mehr dran.</li>
         <li>Die Antwortzeit zählt mit: Brauchst du länger als 3 Sekunden, kommt das Wort früher wieder. Ab 6 Sekunden wird es wie ein falsches Wort geübt.</li>
         <li>Falsche Wörter kommen nach wenigen Karten wieder, bis sie sitzen. Wörter, die du gleich konntest, kommen erst nach Tagen wieder.</li>
       </ol>
@@ -941,6 +947,217 @@ der Eindruck|impression
 die Aussage|statement
 die Bedeutung|meaning;importance;significance
 `;
+const TECH_RAW = `
+die Schraube|screw;bolt
+die Mutter (Schraube)|nut
+die Unterlegscheibe|washer
+der Bolzen|bolt;pin
+der Stift (Maschinenbau)|pin;dowel;dowel pin
+der Niet|rivet
+die Welle|shaft
+das Lager|bearing
+das Kugellager|ball bearing
+das Zahnrad|gear;gear wheel;cog
+das Getriebe|gearbox;transmission;gear unit
+die Feder (Technik)|spring
+die Dichtung|seal;gasket
+der Dichtring|o-ring;seal ring;sealing ring
+die Kupplung|clutch;coupling
+die Bremse|brake
+die Achse|axle;axis
+die Kette|chain
+der Riemen|belt
+die Riemenscheibe|pulley
+der Hebel|lever
+das Gewinde|thread
+die Bohrung|bore;hole
+der Bohrer|drill bit;drill
+die Bohrmaschine|drill;power drill;drill press
+die Drehmaschine|lathe
+die Fräsmaschine|milling machine;mill
+die Werkzeugmaschine|machine tool
+fräsen|mill
+bohren|drill
+schleifen|grind;sand
+schweißen|weld
+löten|solder
+gießen (Metall)|cast
+schmieden|forge
+biegen|bend
+stanzen|punch;stamp
+montieren|assemble;mount;install
+demontieren|disassemble;dismantle
+festziehen|tighten
+lockern|loosen
+schmieren|lubricate;grease
+messen|measure
+die Toleranz|tolerance
+die Passung|fit
+das Maß|dimension;measurement
+der Durchmesser|diameter
+die Länge|length
+die Breite|width
+die Höhe|height
+die Tiefe|depth
+die Dicke|thickness
+das Gewicht|weight
+die Kraft|force;strength
+das Drehmoment|torque
+die Drehzahl|speed;rpm;rotational speed
+die Leistung|power;performance;output
+der Wirkungsgrad|efficiency
+die Reibung|friction
+der Verschleiß|wear;wear and tear
+die Spannung (Material)|stress
+die Spannung (Elektrik)|voltage
+der Strom (Elektrik)|current;electric current
+der Widerstand|resistance;resistor
+die Last|load
+die Verformung|deformation
+die Festigkeit|strength
+die Härte|hardness
+der Stahl|steel
+der Edelstahl|stainless steel
+das Aluminium|aluminum
+das Kupfer|copper
+das Messing|brass
+das Gusseisen|cast iron
+der Kunststoff|plastic
+der Werkstoff|material
+das Blech|sheet metal;sheet
+das Rohr|pipe;tube
+der Schlauch|hose
+das Gehäuse|housing;casing;case
+der Rahmen|frame
+die Halterung|bracket;mount;holder
+das Bauteil|component;part
+das Ersatzteil|spare part;replacement part
+die Baugruppe|assembly;subassembly
+die Zeichnung|drawing
+die Konstruktion|design;construction
+die Stückliste|bill of materials;parts list;bom
+die Fertigung|manufacturing;production
+die Serienfertigung|mass production;series production
+der Prototyp|prototype
+die Qualitätssicherung|quality assurance;quality control
+die Prüfung|test;inspection
+der Prüfstand|test bench;test stand;test rig
+die Inbetriebnahme|commissioning;startup
+die Wartung|maintenance;servicing
+der Ausfall|failure;breakdown;outage
+die Störung|malfunction;fault
+der Elektromotor|electric motor
+der Antrieb|drive;drive system
+der Sensor|sensor
+der Schalter|switch
+die Steuerung|control system;controller;control
+der Regler|controller;regulator
+der Schraubenschlüssel|wrench;spanner
+der Schraubendreher|screwdriver
+die Zange|pliers
+die Feile|file
+der Schraubstock|vise;vice
+die Säge|saw
+die Hydraulik|hydraulics
+die Pneumatik|pneumatics
+der Druck|pressure
+der Druckabfall|pressure drop
+der Durchfluss|flow rate;flow
+die Pumpe|pump
+der Zylinder|cylinder
+der Kolben|piston
+die Kolbenstange|piston rod
+das Ventil|valve
+das Wegeventil|directional valve;directional control valve
+das Druckbegrenzungsventil|pressure relief valve;relief valve
+das Rückschlagventil|check valve;non-return valve
+das Hydrauliköl|hydraulic oil;hydraulic fluid
+der Tank|tank;reservoir
+der Filter|filter
+der Hydrospeicher|accumulator;hydraulic accumulator
+die Leitung|line;pipe
+die Verschraubung|fitting;screw fitting
+das Leck|leak
+undicht|leaking;leaky
+dicht|sealed;tight;leak-proof
+entlüften|bleed;vent
+der Kompressor|compressor
+die Druckluft|compressed air
+das Manometer|pressure gauge;manometer
+die Viskosität|viscosity
+die Temperatur|temperature
+der Verbrennungsmotor|combustion engine;internal combustion engine
+der Zylinderkopf|cylinder head
+die Kurbelwelle|crankshaft
+die Nockenwelle|camshaft
+der Auspuff|exhaust;muffler;exhaust pipe
+der Kühler|radiator
+die Zündkerze|spark plug
+die Autobatterie|car battery;battery
+die Lichtmaschine|alternator
+der Anlasser|starter;starter motor
+das Lenkrad|steering wheel
+die Lenkung|steering
+das Fahrwerk|chassis;suspension;running gear
+der Stoßdämpfer|shock absorber;shock
+der Reifen|tire
+die Felge|rim;wheel rim
+das Rad|wheel
+der Kotflügel|fender
+die Motorhaube|hood
+der Kofferraum|trunk
+die Windschutzscheibe|windshield
+der Scheibenwischer|windshield wiper;wiper
+der Scheinwerfer|headlight;headlamp
+das Rücklicht|taillight;tail light
+die Stoßstange|bumper
+das Armaturenbrett|dashboard;dash
+der Tacho|speedometer
+das Gaspedal|gas pedal;accelerator
+die Bremsscheibe|brake rotor;brake disc;rotor
+der Bremsbelag|brake pad
+der Kraftstoff|fuel;gas;gasoline
+die Tankstelle|gas station
+der Ölwechsel|oil change
+die Karosserie|body;car body;bodywork
+der Allradantrieb|all-wheel drive;four-wheel drive;awd
+das Schaltgetriebe|manual transmission;stick shift
+das Automatikgetriebe|automatic transmission
+der Gang (Auto)|gear
+das Elektroauto|electric car;electric vehicle;ev
+die Ladesäule|charging station;charger
+der Zulieferer|supplier
+der Hersteller|manufacturer
+das Fließband|assembly line;conveyor belt
+der Rückruf|recall
+der Verbrauch|fuel consumption;consumption
+die Abgase|emissions;exhaust gases;exhaust
+der Modellbau|model making;model building;scale modeling
+der Maßstab|scale
+der Bausatz|kit;model kit
+der Klebstoff|glue;adhesive
+kleben|glue;stick
+lackieren|paint;spray paint
+die Grundierung|primer
+der Pinsel|brush;paintbrush
+das Schleifpapier|sandpaper
+das Cuttermesser|utility knife;box cutter;craft knife
+die Pinzette|tweezers
+das Servo|servo
+der Akku|battery;rechargeable battery
+die Fernsteuerung|remote control;radio control;rc
+der Empfänger|receiver
+der Sender|transmitter
+der Propeller|propeller;prop
+der Rumpf|fuselage;hull
+die Tragfläche|wing
+die Lackierung|paint job;finish;paint
+der 3D-Drucker|3d printer
+das Abziehbild|decal
+das Sperrholz|plywood
+das Balsaholz|balsa wood;balsa
+die Schablone|template;stencil
+`;
 const PHRASES_RAW = `
 Ich melde mich dazu bei dir.|I'll get back to you on that.;I'll get back to you.
 Kannst du das kurz erklären?|Can you explain that briefly?;Could you explain that quickly?;Can you briefly explain that?
@@ -1031,6 +1248,13 @@ for (const line of VOCAB_RAW.trim().split('\n')) {
   const item = { id: de.trim(), de: de.trim(), deck: 'w', en: en.split(';').map(s => s.trim()).filter(Boolean) };
   VOCAB.push(item); byId.set(item.id, item);
 }
+for (const line of TECH_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en) continue;
+  const item = { id: 't:' + de.trim(), de: de.trim(), deck: 't', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  if (byId.has(item.id)) continue;
+  VOCAB.push(item); byId.set(item.id, item);
+}
 for (const line of PHRASES_RAW.trim().split('\n')) {
   const [de, en] = line.split('|');
   if (!de || !en) continue;
@@ -1103,6 +1327,14 @@ function isRight(text, item, partial) {
 const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
 const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
 const BLOCK_CMD = ["delete", "remove", "block", "delete word", "remove word", "delete this", "delete that", "remove that", "delete it", "remove it"];
+const STOP_CMD = ["end session", "stop session", "stop training", "end training", "finish session", "finish training", "stop the session", "end the session", "i'm done", "i am done", "we're done", "that's it for today"];
+function isStopCmd(text) { const n = tokens(text).join(' '); return STOP_CMD.some(p => n === tokens(p).join(' ')); }
+async function stopByVoice() {
+  const r = session.right, w = session.wrong;
+  pause();
+  $('fb').innerHTML = '<span class="alt">Session beendet</span>';
+  await say('Session beendet. ' + r + ' richtig, ' + w + ' falsch.', 'de');
+}
 function isBlockCmd(text) { const n = tokens(text).join(' '); return BLOCK_CMD.some(p => n === p); }
 function isPass(text) { const t = tokens(text); const n = t.join(' '); return PASS.some(p => n === tokens(p).join(' ')) || (t.length <= 3 && t.some(w => PASS_WORDS.has(w))); }
 const FILLER = new Set(['uh', 'um', 'uhm', 'hmm', 'hm', 'er', 'erm', 'ah', 'eh', 'ahm', 'mm', 'oh', 'well', 'so', 'okay', 'ok']);
@@ -1127,7 +1359,8 @@ function fixOrder() {
 }
 fixOrder();
 function isBlocked(id) { return S.blocked.includes(id); }
-function usable(id) { const it = byId.get(id); return !!it && it.deck === (set.mode === 'p' ? 'p' : 'w') && !S.blocked.includes(id); }
+function curDeck() { return ['p', 't'].includes(set.mode) ? set.mode : 'w'; }
+function usable(id) { const it = byId.get(id); return !!it && it.deck === curDeck() && !S.blocked.includes(id); }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
 let lastId = null;
 function pick() {
@@ -1354,6 +1587,7 @@ function onFinal(alts) {
   const ok = alts.find(a => isRight((pending + ' ' + a).trim(), cur));
   if (ok) return accept(true, (pending + ' ' + ok).trim());
   const text = alts[0];
+  if (isStopCmd(text)) return stopByVoice();
   if (isBlockCmd(text)) return blockByVoice();
   if (isEcho(text) || isFiller(text)) return;
   const combined = (pending + ' ' + text).trim();
@@ -1363,15 +1597,18 @@ function onFinal(alts) {
   pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, cur && cur.deck === 'p' ? 1600 : 900);
 }
 let lastWrong = { id: null, at: 0 };
+let advanceToken = 0;
 async function blockByVoice() {
   if (!cur) return;
+  const tok = ++advanceToken;
   const target = (lastWrong.id && lastWrong.id !== cur.id && Date.now() - lastWrong.at < 8000) ? lastWrong.id : cur.id;
   const item = byId.get(target);
   blockWord(target);
   phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
   $('card').className = 'card'; $('fb').innerHTML = '<span class="alt">Ausgeblendet: ' + esc(item.de) + '</span>';
-  await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, ''), 'de');
-  if (running) next();
+  if (!running) return;
+  await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, '').replace(/\s*\(.+\)/, ''), 'de');
+  if (running && tok === advanceToken) next();
 }
 function blockWord(id) {
   if (!isBlocked(id)) S.blocked.push(id);
@@ -1399,6 +1636,7 @@ function armSilence() {
 function flushMuted() {
   if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
   const t = mutedText; mutedText = '';
+  if (isStopCmd(t)) return stopByVoice();
   if (isBlockCmd(t)) return blockByVoice();
   if (isRight(t, cur)) accept(true, t);
 }
@@ -1407,6 +1645,8 @@ function renderWord(item) {
   const w = $('word'); w.innerHTML = '';
   if (m) { const a = document.createElement('span'); a.className = 'art'; a.textContent = m[1]; w.append(a, document.createTextNode(m[2])); }
   else w.textContent = item.de;
+  const pm = w.lastChild && w.lastChild.nodeType === 3 && w.lastChild.textContent.match(/^(.*?)\s*\((.+)\)$/);
+  if (pm) { w.lastChild.textContent = pm[1]; const h = document.createElement('span'); h.className = 'hint'; h.textContent = pm[2]; w.append(h); }
   w.classList.toggle('long', item.deck === 'p');
   const st = S.words[item.id];
   $('tag').textContent = !st ? 'neu' : st.learn ? 'üben' : 'Wiederholung';
@@ -1419,13 +1659,13 @@ async function next() {
   renderWord(cur); phase = 'answer'; readyAt = Date.now(); firstHeardAt = 0; $('blockBtn').hidden = false;
   updateStats();
   const myItem = cur;
-  if (set.speakDe) await say(cur.de, 'de');
+  if (set.speakDe) await say(cur.de.replace(/\s*\((.+)\)/, ', $1'), 'de');
   if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); armSilence(); }
 }
 async function accept(ok, heard) {
   if (phase !== 'answer' || !cur) return;
   phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
-  const item = cur;
+  const item = cur; const tok = ++advanceToken;
   const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
   grade(item.id, ok, rt);
   prevCard = { en: item.en, item, at: Date.now() };
@@ -1446,7 +1686,7 @@ async function accept(ok, heard) {
     await say(item.en[0], 'en');
     await sleep(300);
   }
-  if (running) next();
+  if (running && tok === advanceToken) next();
 }
 function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1461,14 +1701,14 @@ function updateStats() {
   setTimeout(driveHint, 0);
   let known = 0, learn = 0;
   for (const id in S.words) { if (!usable(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
-  const deckItems = VOCAB.filter(v => v.deck === (set.mode === 'p' ? 'p' : 'w'));
+  const deckItems = VOCAB.filter(v => v.deck === curDeck());
   const seen = deckItems.filter(v => S.words[v.id] || isBlocked(v.id)).length;
   $('sRight').textContent = session.right; $('sWrong').textContent = session.wrong;
   const ms = session.activeMs + (running ? Date.now() - session.since : 0);
   const n = session.right + session.wrong;
   $('sWpm').textContent = n >= 3 && ms > 15000 ? (n / (ms / 60000)).toFixed(1).replace('.', ',') : '–';
   $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = deckItems.length - seen;
-  $('countInfo').textContent = 'Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
+  $('countInfo').textContent = 'Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter, ' + VOCAB.filter(v => v.deck === 't').length + ' Technikbegriffe und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
 }
 function setMic() {
   setTimeout(driveHint, 0);
@@ -1558,7 +1798,7 @@ function setMode(m) {
   document.querySelectorAll('.tabs [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
   lastId = null; cur = null; phase = 'idle';
   $('card').className = 'card'; $('fb').innerHTML = ''; $('blockBtn').hidden = true;
-  $('word').textContent = m === 'p' ? 'Kannst du das kurz erklären?' : 'Schlüssel';
+  $('word').textContent = m === 'p' ? 'Kannst du das kurz erklären?' : m === 't' ? 'das Zahnrad' : 'Schlüssel';
   $('word').classList.toggle('long', m === 'p');
   showHeard(m === 'p' ? 'Drück auf Start und sag den Satz auf Englisch.' : 'Drück auf Start und sag das englische Wort.', false);
   $('tag').textContent = 'Beispiel';
@@ -1583,7 +1823,7 @@ $('typeForm').addEventListener('submit', e => {
   if (!v || isPass(v)) return accept(false, '');
   accept(isRight(v, cur), v);
 });
-$('blockBtn').onclick = () => { if (!cur) return; const id = cur.id; blockWord(id); if (running && phase === 'answer') { phase = 'feedback'; clearTimeout(silenceTimer); try { synth && synth.cancel(); } catch (e) {} next(); } else { $('fb').innerHTML = '<span class="alt">Ausgeblendet</span>'; } };
+$('blockBtn').onclick = e => { e.stopPropagation(); try { synth && synth.cancel(); } catch (x) {} blockByVoice(); };
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-block]'); if (b) { blockWord(b.dataset.block); return; }
   const u = e.target.closest('[data-unblock]'); if (u) unblockWord(u.dataset.unblock);
