@@ -1524,6 +1524,7 @@ function startListening() {
     rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
     rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
     rec.onresult = e => {
+      lastResultAt = Date.now(); silentMisses = 0;
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
@@ -1622,7 +1623,7 @@ function renderBlocked() {
 }
 let readyAt = 0, firstHeardAt = 0;
 function markHeard() { if (!firstHeardAt) firstHeardAt = Math.max(Date.now(), readyAt); }
-let silenceTimer = null;
+let silenceTimer = null, lastResultAt = 0, silentMisses = 0;
 function armSilence() {
   clearTimeout(silenceTimer);
   if (!set.waitSec || !running || phase !== 'answer') return;
@@ -1630,6 +1631,8 @@ function armSilence() {
   silenceTimer = setTimeout(() => {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
+    // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
+    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 2) { silentMisses = 0; try { rec.abort(); } catch (x) {} } }
     accept(false, '');
   }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
