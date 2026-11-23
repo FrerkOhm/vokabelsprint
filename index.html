@@ -207,6 +207,15 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     </div>
   </details>
 
+  <details id="diagBox">
+    <summary>Mikrofon-Test</summary>
+    <div>
+      <p class="muted">Hört die App dich nicht? Tippe auf „Mikrofon testen“ und sag „hello“. Hier steht dann, was ankommt. Mach einen Screenshot davon, wenn es nicht klappt.</p>
+      <div class="row"><button type="button" id="micTest">Mikrofon testen</button><span class="muted" id="micTestOut"></span></div>
+      <pre id="diag" style="white-space:pre-wrap;font-size:.75rem;margin:0;color:var(--muted);max-height:220px;overflow:auto"></pre>
+    </div>
+  </details>
+
   <details>
     <summary>So funktioniert's</summary>
     <div>
@@ -1456,7 +1465,7 @@ function say(text, lang) {
     };
     const t = setTimeout(fin, 1800 + text.length * 120);
     u.onend = fin; u.onerror = fin;
-    speaking = true; setMic();
+    speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
     synth.speak(u);
   });
 }
@@ -1474,6 +1483,12 @@ function beep() {
 
 /* ---------- Spracherkennung: Plattform-Diktat oder Web Speech API ---------- */
 let dict = null, dictResolved = false, rec = null, listening = false, wantListen = false, micError = '';
+const DIAG = [];
+function dlog(m) {
+  const t = new Date(); DIAG.push(String(t.getMinutes()).padStart(2, '0') + ':' + String(t.getSeconds()).padStart(2, '0') + ' ' + m);
+  if (DIAG.length > 40) DIAG.shift();
+  const el = document.getElementById('diag'); if (el) el.textContent = DIAG.slice().reverse().join('\n');
+}
 let dictNoLang = false, recEverStarted = false, needTap = false, restartTries = 0;
 const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IOS_HELP = IS_IOS
@@ -1522,8 +1537,10 @@ function startListening() {
   if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
   if (!rec) {
     rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
-    rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
+    rec.onaudiostart = () => dlog('Audio an'); rec.onspeechstart = () => dlog('Sprache erkannt');
+    rec.onstart = () => { dlog('Erkennung gestartet'); listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
     rec.onresult = e => {
+      try { dlog('Ergebnis: ' + e.results[e.results.length - 1][0].transcript); } catch (x) {}
       lastResultAt = Date.now(); silentMisses = 0;
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -1534,6 +1551,7 @@ function startListening() {
       if (interim) onPartial(interim);
     };
     rec.onerror = e => {
+      dlog('Fehler: ' + e.error);
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
         micError = IOS_HELP; wantListen = false; pause();
@@ -1541,7 +1559,7 @@ function startListening() {
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
@@ -1632,7 +1650,7 @@ function armSilence() {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
     // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
-    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; try { rec.abort(); } catch (x) {} } }
+    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
     accept(false, '');
   }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
@@ -1831,6 +1849,21 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-block]'); if (b) { blockWord(b.dataset.block); return; }
   const u = e.target.closest('[data-unblock]'); if (u) unblockWord(u.dataset.unblock);
 });
+$('micTest').onclick = () => {
+  if (running) pause();
+  const out = $('micTestOut');
+  if (!SR) { out.textContent = 'Keine Spracherkennung in diesem Browser.'; return; }
+  try { synth && synth.cancel(); } catch (e) {}
+  const t = new SR(); t.lang = 'en-US'; t.interimResults = true; t.continuous = false;
+  dlog('Test: ' + navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 90));
+  t.onstart = () => { out.textContent = 'Hört zu … sag „hello“'; dlog('Test gestartet'); };
+  t.onaudiostart = () => dlog('Test: Audio an');
+  t.onspeechstart = () => dlog('Test: Sprache erkannt');
+  t.onresult = e => { const x = e.results[e.results.length - 1][0].transcript; out.textContent = 'Gehört: ' + x; dlog('Test-Ergebnis: ' + x); };
+  t.onerror = e => { out.textContent = 'Fehler: ' + e.error; dlog('Test-Fehler: ' + e.error); };
+  t.onend = () => { dlog('Test beendet'); if (/Hört zu/.test(out.textContent)) out.textContent = 'Nichts gehört.'; };
+  try { t.start(); } catch (e) { out.textContent = 'Start fehlgeschlagen: ' + e.message; dlog('Test-Startfehler: ' + e.message); }
+};
 $('resetBtn').onclick = () => { $('resetConfirm').hidden = false; };
 $('resetNo').onclick = () => { $('resetConfirm').hidden = true; };
 $('resetYes').onclick = () => {
