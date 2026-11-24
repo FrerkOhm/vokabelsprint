@@ -1449,26 +1449,33 @@ $('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
 
 let micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
 const GRACE = 600;
-function say(text, lang) {
+function micOff() {
+  if (IS_IOS && rec && !dict && wantListen && !micOffForSpeech) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
+}
+function micOn() {
+  if (!micOffForSpeech) return; micOffForSpeech = false;
+  if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} }
+}
+function say(text, lang, hold) {
   return new Promise(res => {
     if (!synth) { res(); return; }
     try { synth.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === 'de' ? 'de-DE' : 'en-US';
     const v = bestVoice(lang); if (v) u.voice = v;
-    u.rate = lang === 'de' ? 1.15 : 0.95;
+    u.rate = lang === 'de' ? 1.25 : 0.95;
     let done = false;
     const fin = () => {
       if (done) return; done = true; clearTimeout(t);
-      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 150 : GRACE); lastSpoken = { text, end: Date.now() };
-      if (micOffForSpeech) { micOffForSpeech = false; if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} } }
+      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 100 : GRACE); lastSpoken = { text, end: Date.now() };
+      if (!hold) micOn();
       setTimeout(flushMuted, GRACE + 20); setMic(); res();
     };
     const t = setTimeout(fin, 1800 + text.length * 120);
     u.onend = fin; u.onerror = fin;
     speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
     // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
-    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
+    micOff();
     synth.speak(u);
   });
 }
@@ -1684,12 +1691,14 @@ async function next() {
   updateStats();
   const myItem = cur;
   if (set.speakDe) await say(cur.de.replace(/\s*\((.+)\)/, ', $1'), 'de');
+  micOn();
   if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); armSilence(); }
 }
 async function accept(ok, heard) {
   if (phase !== 'answer' || !cur) return;
   phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
   const item = cur; const tok = ++advanceToken;
+  micOff(); // iPhone: Mikrofon schon jetzt freigeben, damit das Vorlesen ohne Verzögerung startet
   const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
   grade(item.id, ok, rt);
   prevCard = { en: item.en, item, at: Date.now() };
@@ -1707,8 +1716,8 @@ async function accept(ok, heard) {
     if (heard) showHeard(heard, false);
     recentWrong.unshift(item);
     updateStats(); renderRecent();
-    await say(item.en[0], 'en');
-    await sleep(300);
+    await say(item.en[0], 'en', true);
+    await sleep(IS_IOS ? 120 : 300);
   }
   if (running && tok === advanceToken) next();
 }
@@ -1761,6 +1770,7 @@ function start() {
   setMic(); next();
 }
 function pause() {
+  micOffForSpeech = false;
   if (running) session.activeMs += Date.now() - session.since;
   running = false; phase = 'idle';
   stopListening();
