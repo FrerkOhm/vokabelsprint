@@ -1447,7 +1447,7 @@ if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
 $('voiceEn').onchange = e => { set.voiceEn = e.target.value; saveSettings(); };
 $('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
 
-let speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
+let micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
 const GRACE = 600;
 function say(text, lang) {
   return new Promise(res => {
@@ -1460,12 +1460,15 @@ function say(text, lang) {
     let done = false;
     const fin = () => {
       if (done) return; done = true; clearTimeout(t);
-      speaking = false; quietUntil = Date.now() + GRACE; lastSpoken = { text, end: Date.now() };
+      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 150 : GRACE); lastSpoken = { text, end: Date.now() };
+      if (micOffForSpeech) { micOffForSpeech = false; if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} } }
       setTimeout(flushMuted, GRACE + 20); setMic(); res();
     };
     const t = setTimeout(fin, 1800 + text.length * 120);
     u.onend = fin; u.onerror = fin;
     speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
+    // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
+    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
     synth.speak(u);
   });
 }
@@ -1536,7 +1539,7 @@ function startListening() {
   }
   if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
   if (!rec) {
-    rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
+    rec = new SR(); rec.lang = 'en-US'; rec.continuous = !IS_IOS; rec.interimResults = true; if (!IS_IOS) rec.maxAlternatives = 3;
     rec.onaudiostart = () => dlog('Audio an'); rec.onspeechstart = () => dlog('Sprache erkannt');
     rec.onstart = () => { dlog('Erkennung gestartet'); listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
     rec.onresult = e => {
@@ -1559,7 +1562,7 @@ function startListening() {
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { dlog('Erkennung beendet'); listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
