@@ -1833,6 +1833,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { running ? pause() : null; }
   else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? pause() : start(); }
 });
+// Diktat über die iPhone-Tastatur: richtige Antworten sofort erkennen, ohne Enter
+$('typed').addEventListener('input', () => {
+  const v = $('typed').value.trim();
+  if (!v || !running || phase !== 'answer' || !cur) return;
+  if (isRight(v, cur)) { $('typed').value = ''; accept(true, v); }
+  else armSilence();
+});
 $('typeForm').addEventListener('submit', e => {
   e.preventDefault();
   const v = $('typed').value.trim(); $('typed').value = '';
