@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 22:30';
+const APP_VERSION = 'Version 25.11. 22:35';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1569,13 +1569,13 @@ function startListening() {
     rec.onerror = e => {
       dlog('Fehler: ' + e.error);
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
+        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { if (!(IS_IOS && speaking)) try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
         micError = IOS_HELP; wantListen = false; pause();
       }
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { dlog('Erkennung beendet'); listening = false; lastMicOff = Date.now(); setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; lastMicOff = Date.now(); setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { if (IS_IOS && speaking) return; try { rec.start(); } catch (e) { setTimeout(() => { if (IS_IOS && speaking) return; try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
@@ -1666,7 +1666,7 @@ function armSilence() {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
     // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
-    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
+    if (rec && !dict && !speaking && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
     accept(false, '');
   }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
