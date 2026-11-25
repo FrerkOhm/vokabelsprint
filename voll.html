@@ -1,0 +1,1947 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Vokabelsprint Englisch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column, the flashcard is the hero; controls and stats sit below it like a dashboard strip. */
+:root{
+  --bg:#eef2f8; --surface:#ffffff; --ink:#14213d; --muted:#5a6680; --line:#d9e0ec;
+  --accent:#2f55e4; --accent-ink:#ffffff; --ok:#16935b; --ok-soft:#dff5ea; --bad:#cf3f33; --bad-soft:#fde5e2;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1321; --surface:#151d2f; --ink:#e7ecf6; --muted:#97a3bb; --line:#26314a;
+  --accent:#7090ff; --accent-ink:#0d1321; --ok:#3fd08e; --ok-soft:#123327; --bad:#ff7063; --bad-soft:#3a1a18; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1321; --surface:#151d2f; --ink:#e7ecf6; --muted:#97a3bb; --line:#26314a;
+  --accent:#7090ff; --accent-ink:#0d1321; --ok:#3fd08e; --ok-soft:#123327; --bad:#ff7063; --bad-soft:#3a1a18; color-scheme:dark }
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:0}
+.engine{font-size:.8rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 22px 22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;transition:box-shadow .15s}
+.card.ok{box-shadow:0 0 0 3px var(--ok) inset}
+.card.bad{box-shadow:0 0 0 3px var(--bad) inset}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.word{font-family:var(--display);font-weight:700;font-size:clamp(2rem,9vw,3.2rem);line-height:1.05;letter-spacing:-.02em;text-wrap:balance;min-height:1.1em;overflow-wrap:anywhere}
+.word .art{font-weight:500;color:var(--muted);font-size:.55em;letter-spacing:0;margin-right:.3em}
+.heard{min-height:1.5em;color:var(--muted);font-size:.95rem;overflow-wrap:anywhere}
+.heard b{color:var(--ink);font-weight:500}
+.heard.partial b{opacity:.6}
+.fb{min-height:2.6em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fb .sol{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:6px 12px;font-weight:600;font-size:1.15rem}
+.fb .alt{color:var(--muted);font-size:.85rem}
+.fb .okmark{color:var(--ok);font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600;font-size:1.05rem;padding:14px 22px;flex:1 1 180px}
+.mic{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted);flex:1 1 140px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--line);flex:none}
+.dot.on{background:var(--ok);animation:pulse 1.4s ease-in-out infinite}
+.dot.talk{background:var(--accent)}
+.dot.err{background:var(--bad)}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.dot.on{animation:none}}
+form{display:flex;gap:8px}
+input[type=text]{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stat{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .n{font-family:var(--display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat .n.ok{color:var(--ok)} .stat .n.bad{color:var(--bad)}
+.recent{display:flex;flex-wrap:wrap;gap:6px;font-size:.85rem}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.chip i{font-style:normal;color:var(--muted)}
+.chip .x{border:0;background:none;padding:0 2px;color:var(--muted);font-size:.9em;line-height:1}
+.chip .x:hover{color:var(--bad)}
+.delbtn{align-self:stretch;border:2px solid var(--bad);color:var(--bad);background:transparent;font-weight:600;font-size:1.05rem;padding:12px;border-radius:12px}
+body.drive .delbtn{position:absolute;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));font-size:1.4rem;padding:20px;border-width:3px}
+body.drive .driveHint{bottom:calc(110px + env(safe-area-inset-bottom,0px))!important}
+.ghost{align-self:flex-start;border:0;background:none;color:var(--muted);padding:2px 0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+summary{cursor:pointer;font-weight:600}
+details > div{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+label.opt{display:flex;gap:10px;align-items:center}
+select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+.muted{color:var(--muted);font-size:.88rem}
+.danger{color:var(--bad);border-color:var(--bad)}
+.notice{background:var(--bad-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:.9rem}
+ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+header .driveBtn{margin-left:auto;padding:6px 12px;font-size:.85rem}
+.driveTop,.driveHint{display:none}
+body.drive{
+  --bg:#000000; --surface:#0a0d14; --ink:#ffffff; --muted:#9aa6bd; --line:#1f2738;
+  --accent:#7aa0ff; --accent-ink:#000000; --ok:#45e09a; --ok-soft:#0f2e20; --bad:#ff7a6e; --bad-soft:#3a1714; color-scheme:dark;
+  padding-block:0; height:100%;
+}
+body.drive .wrap{max-width:none;height:100%;gap:0}
+body.drive header,body.drive .stats,body.drive details,body.drive #recentWrap,body.drive form,body.drive .row,body.drive .label{display:none!important}
+body.drive .card{box-sizing:border-box;flex:1;min-height:100vh;min-height:100dvh;border:0;border-radius:0;background:var(--bg);justify-content:center;align-items:center;text-align:center;gap:24px;padding:24px 0;cursor:pointer;user-select:none;-webkit-user-select:none}
+body.drive .card.ok{box-shadow:0 0 0 10px var(--ok) inset}
+body.drive .card.bad{box-shadow:0 0 0 10px var(--bad) inset}
+body.drive .word{font-size:clamp(3rem,15vw,6rem)}
+body.drive .word .art{display:block;margin:0 0 .2em}
+body.drive .heard{font-size:1.2rem}
+body.drive .fb{justify-content:center;min-height:4rem}
+body.drive .fb .sol{font-size:clamp(2rem,9vw,3.5rem);padding:8px 20px}
+body.drive .fb .okmark{font-size:1.8rem}
+body.drive .driveTop{display:flex;position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:0;right:0;justify-content:space-between;align-items:center;color:var(--muted);font-size:1rem}
+body.drive .driveTop button{background:var(--surface);color:var(--ink);border-color:var(--line);font-size:.95rem}
+body.drive .driveHint{display:block;position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:0;right:0;font-size:1.3rem;font-weight:600;color:var(--muted)}
+body.drive .driveHint.live{color:var(--ok)}
+body.drive .driveHint.err{color:var(--bad)}
+body.drive .notice{position:fixed;left:16px;right:16px;bottom:80px;z-index:5}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--line);padding:4px;border-radius:14px}
+.tabs button{border:0;background:transparent;padding:9px 2px;font-size:.88rem;min-width:0;font-weight:600;color:var(--muted);border-radius:10px}
+.tabs button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.word .hint{display:block;font-size:.4em;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:.3em}
+.word.long{font-size:clamp(1.6rem,6.5vw,2.3rem);line-height:1.15}
+body.drive .word.long{font-size:clamp(2rem,9vw,3.2rem)}
+.talk{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.talk h2{font-family:var(--display);font-size:1.3rem;margin:0}
+.talk p{margin:0}
+.scen{display:flex;flex-wrap:wrap;gap:8px}
+.scen button{border-radius:999px;padding:8px 14px}
+.scen button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.linkbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:12px;text-align:center}
+textarea{width:100%;box-sizing:border-box;font:inherit;font-size:.85rem;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);resize:vertical}
+body.mode-c #card,body.mode-c .wrap > .row,body.mode-c #typeForm,body.mode-c .stats,body.mode-c #recentWrap,body.mode-c #driveBtn{display:none!important}
+body.drive .tabs,body.drive .talk{display:none!important}
+[hidden]{display:none!important}
+kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.85em}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Vokabelsprint</h1>
+    <button type="button" class="driveBtn" id="driveBtn">Fahrmodus</button>
+    <span class="engine" id="engine">Seite startet nicht? Dann bitte über einen Webbrowser mit https-Adresse öffnen.</span>
+  </header>
+
+  <nav class="tabs" aria-label="Übungsart">
+    <button type="button" data-mode="w">Wörter</button>
+    <button type="button" data-mode="p">Arbeitssätze</button>
+    <button type="button" data-mode="t">Technik</button>
+    <button type="button" data-mode="c">Gespräch</button>
+  </nav>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section class="talk" id="talk" hidden>
+    <h2>Mit Claude Englisch sprechen</h2>
+    <p class="muted">„Vokabel-Drill“: Claude fragt dich 40 Wörter ab, zuerst die, die du gerade übst, dann neue. Läuft im Sprachmodus der Claude-App und hält im Auto die Verbindung. Die anderen Situationen: Claude spielt einen amerikanischen Kollegen, redet mit dir und verbessert kurz, wenn etwas nicht stimmt. Das läuft im Sprachmodus der Claude-App, ohne Zusatzkosten.</p>
+    <div class="scen" id="scen" role="radiogroup" aria-label="Situation"></div>
+    <div class="row">
+      <a class="primary linkbtn" id="talkOpen" href="https://claude.ai/new" target="_blank" rel="noopener">In Claude öffnen</a>
+      <button type="button" id="talkCopy">Anweisung kopieren</button>
+    </div>
+    <ol>
+      <li>„In Claude öffnen“ tippen. Ist das Textfeld dort leer, vorher „Anweisung kopieren“ und dann einfügen.</li>
+      <li>Nachricht abschicken.</li>
+      <li>Auf das Sprachsymbol (die Wellen rechts unten) tippen und einfach losreden.</li>
+    </ol>
+    <details><summary>Anweisung ansehen</summary><div><textarea id="talkPrompt" readonly rows="9"></textarea></div></details>
+  </section>
+
+  <section class="card" id="card" aria-live="polite">
+    <div class="driveTop"><span id="driveCount"></span><button type="button" id="driveExit">Fahrmodus beenden</button></div>
+    <div class="label"><span>Deutsch → Englisch</span><span id="tag"></span></div>
+    <div class="word" id="word"><span class="art">z.&nbsp;B.</span>Schlüssel</div>
+    <div class="heard" id="heard">Drück auf Start und sag das englische Wort.</div>
+    <div class="fb" id="fb"></div>
+    <button type="button" class="delbtn" id="blockBtn" hidden>✕ Wort löschen</button>
+    <div class="driveHint" id="driveHint">Tippen zum Starten</div>
+  </section>
+
+  <div class="row">
+    <button class="primary" id="startBtn" type="button">Start</button>
+    <div class="mic"><span class="dot" id="dot"></span><span id="micText">Bereit</span></div>
+  </div>
+
+  <form id="typeForm" autocomplete="off">
+    <input type="text" id="typed" placeholder="Oder Antwort tippen, Enter" aria-label="Antwort tippen" autocapitalize="off" spellcheck="false">
+    <button type="submit">OK</button>
+  </form>
+
+  <div class="stats" aria-label="Statistik">
+    <div class="stat"><span class="n ok" id="sRight">0</span><span class="k">Richtig</span></div>
+    <div class="stat"><span class="n bad" id="sWrong">0</span><span class="k">Falsch</span></div>
+    <div class="stat"><span class="n" id="sWpm">–</span><span class="k">Wörter/Min</span></div>
+    <div class="stat"><span class="n" id="sKnown">0</span><span class="k">Sitzen</span></div>
+    <div class="stat"><span class="n" id="sLearn">0</span><span class="k">Im Training</span></div>
+    <div class="stat"><span class="n" id="sNew">0</span><span class="k">Noch neu</span></div>
+  </div>
+
+  <div id="recentWrap" hidden>
+    <div class="label" style="margin-bottom:6px"><span>Zuletzt falsch</span></div>
+    <div class="recent" id="recent"></div>
+  </div>
+
+  <details>
+    <summary>Ausgeblendete Wörter (<span id="blockedCount">0</span>)</summary>
+    <div>
+      <p class="muted">Diese Wörter werden nicht mehr abgefragt. Mit ↺ holst du eins zurück.</p>
+      <div class="recent" id="blockedList"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Einstellungen</summary>
+    <div>
+      <label class="opt"><input type="checkbox" id="optSpeakDe" checked> Deutsches Wort vorlesen (für Training ohne Hinschauen)</label>
+      <label class="opt"><input type="checkbox" id="optBeep" checked> Kurzer Ton bei richtiger Antwort</label>
+      <label class="opt" style="flex-wrap:wrap">Lösung automatisch sagen nach <select id="optWait"><option value="4">4 Sekunden</option><option value="7">7 Sekunden</option><option value="10">10 Sekunden</option><option value="15">15 Sekunden</option><option value="0">nie</option></select></label>
+      <label class="opt" style="flex-wrap:wrap">Englische Stimme <select id="voiceEn"></select></label>
+      <label class="opt" style="flex-wrap:wrap">Deutsche Stimme <select id="voiceDe"></select></label>
+      <div class="row">
+        <button type="button" class="danger" id="resetBtn">Fortschritt zurücksetzen</button>
+        <span id="resetConfirm" hidden class="row"><span class="muted">Wirklich alles löschen?</span>
+          <button type="button" class="danger" id="resetYes">Ja, löschen</button>
+          <button type="button" id="resetNo">Abbrechen</button></span>
+      </div>
+    </div>
+  </details>
+
+  <details id="diagBox">
+    <summary>Mikrofon-Test</summary>
+    <div>
+      <p class="muted">Hört die App dich nicht? Tippe auf „Mikrofon testen“ und sag „hello“. Hier steht dann, was ankommt. Mach einen Screenshot davon, wenn es nicht klappt.</p>
+      <div class="row"><button type="button" id="micTest">Mikrofon testen</button><span class="muted" id="micTestOut"></span></div>
+      <pre id="diag" style="white-space:pre-wrap;font-size:.75rem;margin:0;color:var(--muted);max-height:220px;overflow:auto"></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>So funktioniert's</summary>
+    <div>
+      <ol>
+        <li>Auf <b>Start</b> drücken und das Mikrofon erlauben.</li>
+        <li>Das deutsche Wort erscheint (und wird vorgelesen). Sag einfach das englische Wort, z.&nbsp;B. „key“. Bei Verben geht „go“ oder „to go“.</li>
+        <li><b>Richtig:</b> kurzer Ton, sofort das nächste Wort. <b>Falsch:</b> die richtige Antwort wird vorgesagt, danach geht es weiter.</li>
+        <li>Weißt du es nicht, sag „pass“, „help“ oder „skip“. Oder sag einfach nichts: nach 7 Sekunden kommt die Lösung von selbst (einstellbar).</li>
+        <li>Freihändig, z.&nbsp;B. im Auto: „Deutsches Wort vorlesen“ anlassen, Handy per Bluetooth/CarPlay verbinden, Start drücken. Der Bildschirm bleibt an, bitte die Seite offen lassen.</li>
+        <li>Im Fahrmodus beendest du die Übung mit „end session“ (oder „stop session“, „I'm done“).</li>
+        <li>Ein Wort wird nie erkannt? Sag „delete“ (gleich nachdem die Lösung kam) oder tippe auf den roten Knopf „✕ Wort löschen“ bzw. das ✕ unter „Zuletzt falsch“. Es kommt dann nicht mehr dran.</li>
+        <li>Die Antwortzeit zählt mit: Brauchst du länger als 3 Sekunden, kommt das Wort früher wieder. Ab 6 Sekunden wird es wie ein falsches Wort geübt.</li>
+        <li>Falsche Wörter kommen nach wenigen Karten wieder, bis sie sitzen. Wörter, die du gleich konntest, kommen erst nach Tagen wieder.</li>
+      </ol>
+      <p class="muted">Tipp: Mit Kopfhörern hört das Mikrofon die Sprachausgabe nicht mit. <kbd>Esc</kbd> pausiert. Der Fortschritt wird in diesem Browser gespeichert.</p>
+      <p class="muted" id="countInfo"></p>
+    </div>
+  </details>
+</div>
+
+<script>
+/* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
+const APP_VERSION = 'Version 25.11. 22:55';
+const VOCAB_RAW = `
+der Mann|man;husband
+die Frau|woman;wife
+das Kind|child;kid
+der Junge|boy
+das Mädchen|girl
+der Freund|friend;boyfriend
+die Familie|family
+die Mutter|mother;mom;mum
+der Vater|father;dad
+der Bruder|brother
+die Schwester|sister
+der Sohn|son
+die Tochter|daughter
+die Eltern|parents
+die Großmutter|grandmother;grandma;granny
+der Großvater|grandfather;grandpa
+der Nachbar|neighbor
+das Baby|baby
+der Mensch|person;human;human being
+die Leute|people
+das Haus|house;home
+die Wohnung|apartment;flat
+das Zimmer|room
+die Küche|kitchen;cuisine
+das Badezimmer|bathroom
+das Schlafzimmer|bedroom
+die Tür|door
+das Fenster|window
+der Tisch|table;desk
+der Stuhl|chair
+das Bett|bed
+der Schrank|closet;cabinet;cupboard;wardrobe
+das Sofa|sofa;couch
+die Lampe|lamp
+der Schlüssel|key
+die Treppe|stairs;staircase
+der Fußboden|floor
+die Wand|wall
+das Dach|roof
+der Garten|garden;yard
+der Spiegel|mirror
+das Kissen|pillow;cushion
+die Decke|blanket;ceiling
+der Kühlschrank|fridge;refrigerator
+der Ofen|oven;stove
+die Dusche|shower
+das Handtuch|towel
+die Seife|soap
+das Essen|food;meal
+das Wasser|water
+das Brot|bread
+die Butter|butter
+der Käse|cheese
+die Milch|milk
+das Ei|egg
+das Fleisch|meat
+der Fisch|fish
+das Huhn|chicken;hen
+der Apfel|apple
+die Birne|pear;light bulb;bulb
+die Banane|banana
+die Orange|orange
+die Erdbeere|strawberry
+die Kartoffel|potato
+die Tomate|tomato
+die Zwiebel|onion
+die Karotte|carrot
+das Gemüse|vegetables;vegetable;veggies
+das Obst|fruit
+der Reis|rice
+die Nudeln|noodles;pasta
+die Suppe|soup
+der Salat|salad;lettuce
+der Zucker|sugar
+das Salz|salt
+der Pfeffer|pepper
+der Kaffee|coffee
+der Tee|tea
+der Saft|juice
+das Bier|beer
+der Wein|wine
+der Kuchen|cake
+das Frühstück|breakfast
+das Mittagessen|lunch
+das Abendessen|dinner;supper
+der Teller|plate
+die Tasse|cup;mug
+das Glas|glass;jar
+die Gabel|fork
+das Messer|knife
+der Löffel|spoon
+die Flasche|bottle
+die Rechnung|check;bill;invoice
+das Trinkgeld|tip
+die Speisekarte|menu
+der Kopf|head
+das Gesicht|face
+das Auge|eye
+das Ohr|ear
+die Nase|nose
+der Mund|mouth
+der Zahn|tooth
+das Haar|hair
+der Hals|neck;throat
+die Schulter|shoulder
+der Arm|arm
+die Hand|hand
+der Finger|finger
+das Bein|leg
+das Knie|knee
+der Fuß|foot
+der Rücken|back
+der Bauch|belly;stomach;tummy
+das Herz|heart
+die Haut|skin
+das Blut|blood
+die Kleidung|clothes;clothing
+das Hemd|shirt
+die Hose|pants;trousers
+der Rock|skirt
+das Kleid|dress
+die Jacke|jacket
+der Mantel|coat
+der Schuh|shoe;shoes
+die Socke|sock;socks
+der Hut|hat
+der Handschuh|glove;gloves
+der Gürtel|belt
+die Tasche|bag;pocket
+die Brille|glasses;spectacles
+die Uhr|watch;clock
+die Stadt|city;town
+das Dorf|village
+die Straße|street;road
+der Weg|way;path
+die Brücke|bridge
+der Bahnhof|train station;station;railway station
+der Flughafen|airport
+der Zug|train
+das Auto|car
+das Fahrrad|bike;bicycle
+das Flugzeug|plane;airplane;aeroplane
+das Schiff|ship
+das Boot|boat
+die Fahrkarte|ticket
+der Koffer|suitcase
+die Reise|trip;journey;travel
+der Urlaub|vacation;holiday;holidays
+die Kirche|church
+die Schule|school
+das Krankenhaus|hospital
+die Apotheke|pharmacy;drugstore;chemist
+die Bank|bank;bench
+die Post|mail;post office;post
+der Laden|store;shop
+der Markt|market
+die Ecke|corner
+die Ampel|traffic light;traffic lights
+die Landkarte|map
+das Geld|money
+der Preis|price;prize
+die Arbeit|work;job
+das Büro|office
+der Arzt|doctor;physician
+die Polizei|police
+die Sonne|sun
+der Mond|moon
+der Stern|star
+der Himmel|sky;heaven
+die Wolke|cloud
+der Regen|rain
+der Schnee|snow
+der Wind|wind
+das Wetter|weather
+der Baum|tree
+die Blume|flower
+das Gras|grass
+der Wald|forest;woods
+der Berg|mountain
+der Fluss|river
+der See|lake
+das Meer|sea;ocean
+der Strand|beach
+die Insel|island
+der Stein|stone;rock
+das Feuer|fire
+die Luft|air
+die Erde|earth;soil;ground
+das Tier|animal
+der Hund|dog
+die Katze|cat
+das Pferd|horse
+die Kuh|cow
+das Schwein|pig
+das Schaf|sheep
+der Vogel|bird
+die Maus|mouse
+der Bär|bear
+die Biene|bee
+die Spinne|spider
+die Zeit|time
+der Tag|day
+die Nacht|night
+der Morgen|morning
+der Abend|evening
+die Woche|week
+der Monat|month
+das Jahr|year
+die Stunde|hour;lesson
+die Minute|minute
+heute|today
+morgen|tomorrow
+gestern|yesterday
+jetzt|now
+später|later
+früh|early
+spät|late
+immer|always
+nie|never
+oft|often;frequently
+manchmal|sometimes
+bald|soon
+schon|already
+wieder|again
+der Montag|monday
+der Dienstag|tuesday
+der Mittwoch|wednesday
+der Donnerstag|thursday
+der Freitag|friday
+der Samstag|saturday
+der Sonntag|sunday
+der Sommer|summer
+der Winter|winter
+der Frühling|spring
+der Herbst|fall;autumn
+der Geburtstag|birthday
+gehen|go;walk
+kommen|come
+sehen|see
+hören|hear;listen
+sprechen|speak;talk
+sagen|say;tell
+essen|eat
+trinken|drink
+schlafen|sleep
+arbeiten|work
+spielen|play
+lesen|read
+schreiben|write
+kaufen|buy
+verkaufen|sell
+bezahlen|pay
+geben|give
+nehmen|take
+bringen|bring
+finden|find
+suchen|search;look for;seek
+wissen|know
+denken|think
+glauben|believe;think
+verstehen|understand
+lernen|learn;study
+helfen|help
+fragen|ask
+antworten|answer;reply
+warten|wait
+laufen|run;walk
+fahren|drive;ride;go
+fliegen|fly
+schwimmen|swim
+sitzen|sit
+stehen|stand
+liegen|lie;lie down;be lying
+öffnen|open
+schließen|close;shut
+beginnen|begin;start
+aufhören|stop;quit
+machen|make;do
+brauchen|need
+wollen|want
+mögen|like
+lieben|love
+hassen|hate
+wohnen|live
+sterben|die
+kochen|cook;boil
+waschen|wash
+putzen|clean
+tragen|carry;wear
+ziehen|pull
+drücken|push;press;squeeze
+werfen|throw
+fangen|catch
+fallen|fall
+vergessen|forget
+sich erinnern|remember;recall
+zeigen|show;point
+versuchen|try;attempt
+gewinnen|win
+verlieren|lose
+lachen|laugh
+weinen|cry;weep
+singen|sing
+tanzen|dance
+treffen|meet;hit
+besuchen|visit
+reisen|travel
+anrufen|call;phone;ring
+schicken|send
+benutzen|use
+ändern|change
+wählen|choose;vote;dial;pick
+reparieren|repair;fix
+bauen|build
+schneiden|cut
+füllen|fill
+leihen|borrow;lend
+mieten|rent
+teilen|share;divide
+zählen|count
+fühlen|feel
+riechen|smell
+schmecken|taste
+berühren|touch
+lächeln|smile
+erklären|explain
+entscheiden|decide
+erlauben|allow;permit;let
+vermissen|miss
+hoffen|hope
+sich beeilen|hurry;hurry up
+aufwachen|wake up;wake
+aufstehen|get up;stand up
+sich ausruhen|rest;relax
+heiraten|marry;get married
+wachsen|grow
+verdienen|earn;deserve
+sparen|save
+ausgeben|spend
+groß|big;tall;large;great
+klein|small;little
+gut|good;well
+schlecht|bad
+neu|new
+alt|old
+jung|young
+schön|beautiful;nice;pretty;lovely
+hässlich|ugly
+lang|long
+kurz|short;brief
+hoch|high;tall
+tief|deep;low
+schnell|fast;quick;quickly
+langsam|slow;slowly
+warm|warm
+kalt|cold
+heiß|hot
+kühl|cool
+nass|wet
+trocken|dry
+voll|full
+leer|empty
+schwer|heavy;difficult;hard
+leicht|easy;light
+einfach|easy;simple
+schwierig|difficult;hard;tricky
+billig|cheap
+teuer|expensive
+reich|rich;wealthy
+arm|poor
+glücklich|happy;lucky
+traurig|sad
+müde|tired;sleepy
+hungrig|hungry
+durstig|thirsty
+krank|sick;ill
+gesund|healthy
+stark|strong
+schwach|weak
+laut|loud;noisy
+leise|quiet;silent;soft;softly
+hell|bright;light
+dunkel|dark
+sauber|clean
+schmutzig|dirty
+richtig|right;correct
+falsch|wrong;false
+wichtig|important
+interessant|interesting
+langweilig|boring
+lustig|funny
+freundlich|friendly;kind
+böse|evil;bad;angry;mean
+wütend|angry;furious;mad
+ruhig|quiet;calm
+gefährlich|dangerous
+sicher|safe;sure;secure
+frei|free
+besetzt|occupied;busy;taken;engaged
+offen|open
+geschlossen|closed;shut
+fertig|ready;finished;done
+dick|thick;fat
+dünn|thin
+weich|soft
+hart|hard
+süß|sweet;cute
+sauer|sour;angry;upset;mad
+scharf|spicy;sharp;hot
+frisch|fresh
+nah|near;close
+weit|far;wide
+links|left;on the left
+rechts|right;on the right
+oben|up;upstairs;above;at the top
+unten|down;downstairs;below;at the bottom
+rot|red
+blau|blue
+grün|green
+gelb|yellow
+schwarz|black
+weiß|white
+grau|gray
+braun|brown
+rosa|pink
+lila|purple;lilac;violet
+ja|yes
+nein|no
+bitte|please;you're welcome
+danke|thank you;thanks
+Entschuldigung|sorry;excuse me;pardon
+hallo|hello;hi;hey
+tschüss|bye;goodbye;see you
+vielleicht|maybe;perhaps
+viel|much;a lot;lots
+wenig|little;few;not much
+alles|everything;all
+nichts|nothing
+etwas|something;some;a little
+jemand|someone;somebody
+niemand|nobody;no one
+hier|here
+dort|there
+überall|everywhere
+warum|why
+wann|when
+wo|where
+wer|who
+was|what
+wie|how
+welcher|which
+aber|but
+und|and
+oder|or
+weil|because
+mit|with
+ohne|without
+für|for
+gegen|against
+zwischen|between
+neben|next to;beside
+hinter|behind
+unter|under;below;beneath
+über|over;above;about
+sehr|very
+genug|enough
+zusammen|together
+allein|alone
+fast|almost;nearly
+nur|only;just
+auch|also;too;as well
+das Buch|book
+die Zeitung|newspaper;paper
+der Brief|letter
+das Papier|paper
+der Stift|pen;pencil
+das Handy|cell phone;mobile phone;phone;mobile;smartphone
+der Fernseher|television;tv;tv set
+das Bild|picture;image;painting
+das Foto|photo;photograph;picture
+die Musik|music
+das Lied|song
+der Film|movie;film
+das Spiel|game;match
+der Ball|ball
+das Geschenk|present;gift
+die Kerze|candle
+die Schere|scissors
+der Regenschirm|umbrella
+die Zahnbürste|toothbrush
+das Werkzeug|tool;tools
+der Hammer|hammer
+der Nagel|nail
+das Licht|light
+die Frage|question
+die Antwort|answer;reply
+das Wort|word
+die Sprache|language;speech
+der Name|name
+die Nummer|number
+die Farbe|color;paint
+die Idee|idea
+das Problem|problem;issue
+der Fehler|mistake;error;fault
+die Hilfe|help
+die Liebe|love
+das Glück|luck;happiness
+die Angst|fear;anxiety
+der Spaß|fun
+der Traum|dream
+die Geschichte|story;history
+das Leben|life
+die Welt|world
+das Land|country;land
+die Grenze|border;limit
+der Gast|guest
+der Kunde|customer;client
+der Chef|boss
+der Kollege|coworker;colleague
+der Lehrer|teacher
+der Schüler|student;pupil
+der Kellner|waiter
+der Fahrer|driver
+die Krankenschwester|nurse
+der Termin|appointment;date
+die Besprechung|meeting
+die Hochzeit|wedding
+das Wochenende|weekend
+der Feiertag|holiday;public holiday;bank holiday
+die Erkältung|cold
+das Fieber|fever;temperature
+der Schmerz|pain;ache
+die Medizin|medicine
+die Tablette|pill;tablet
+notwendig|necessary;needed
+berücksichtigen|consider;take into account
+vorschlagen|suggest;propose
+gemäß|according to;in accordance with
+außerdem|also;besides;moreover;furthermore;in addition
+deshalb|therefore;that's why;so
+trotzdem|nevertheless;anyway;still;even so
+obwohl|although;even though;though
+jedoch|however
+stattdessen|instead
+sondern|but;rather
+während|while;during
+nachdem|after
+bevor|before
+seit|since;for
+bis|until;till;by
+falls|in case;if
+ob|whether;if
+als ob|as if;as though
+eigentlich|actually
+tatsächlich|actually;indeed;really;in fact
+wahrscheinlich|probably;likely
+möglicherweise|possibly;maybe;perhaps
+sicherlich|certainly;surely
+natürlich|of course;naturally
+offensichtlich|obviously;apparently
+besonders|especially;particularly
+mindestens|at least
+höchstens|at most
+ungefähr|about;approximately;around;roughly
+ziemlich|quite;pretty;fairly;rather
+völlig|completely;totally;entirely
+kaum|hardly;barely;scarcely
+sofort|immediately;right away;at once
+endlich|finally;at last
+schließlich|eventually;finally;after all
+zuerst|first;at first;first of all
+danach|afterwards;after that;then
+inzwischen|meanwhile;in the meantime;by now
+zum Beispiel|for example;for instance
+im Allgemeinen|in general;generally
+übrigens|by the way
+sowieso|anyway;anyhow
+irgendwie|somehow
+also|so;well;therefore
+dennoch|nevertheless;yet;still
+daher|therefore;hence;that's why
+außer|except;apart from;besides
+anstatt|instead of
+trotz|despite;in spite of
+wegen|because of;due to
+durch|through;by
+innerhalb|within;inside
+außerhalb|outside
+ähnlich|similar;alike
+verschieden|different;various
+gleich|same;equal;right away
+eigen|own
+gewöhnlich|usual;ordinary;usually
+üblich|usual;common;customary
+möglich|possible
+unmöglich|impossible
+wahr|true
+klar|clear;of course
+genau|exactly;exact;precise
+ganz|whole;entire;quite;completely
+bestimmt|certainly;definitely;certain
+erforderlich|required;necessary
+verfügbar|available
+zuverlässig|reliable
+bequem|comfortable;convenient
+angenehm|pleasant;comfortable
+geeignet|suitable;appropriate
+zufrieden|satisfied;content;happy
+überrascht|surprised
+besorgt|worried;concerned
+annehmen|assume;accept;suppose
+vermeiden|avoid
+erwarten|expect
+erreichen|reach;achieve
+schaffen|manage;create;make it
+anbieten|offer
+bereitstellen|provide
+enthalten|contain;include
+abhängen|depend
+bedeuten|mean
+beschreiben|describe
+vergleichen|compare
+verbessern|improve
+erhöhen|increase;raise
+reduzieren|reduce;decrease
+unterstützen|support
+überzeugen|convince;persuade
+bestätigen|confirm
+empfehlen|recommend
+behaupten|claim;assert
+erwähnen|mention
+betonen|emphasize;stress
+zustimmen|agree
+widersprechen|disagree;contradict
+sich beschweren|complain
+sich weigern|refuse
+verhindern|prevent
+ermöglichen|enable;allow;make possible
+ermutigen|encourage
+beeinflussen|influence;affect
+bemerken|notice;remark
+erkennen|recognize;realize
+sich vorstellen|imagine;introduce
+sich konzentrieren|concentrate;focus
+sich kümmern|take care;care;look after
+sich gewöhnen|get used to
+sich verlassen|rely;depend;count on
+sich lohnen|be worth it;pay off;worth it
+gehören|belong
+passieren|happen;occur
+scheinen|seem;appear;shine
+bleiben|stay;remain
+werden|become;get;will
+erhalten|receive;get;obtain
+liefern|deliver;supply
+verlangen|demand;require;ask for
+erfordern|require;demand
+behandeln|treat;handle;deal with
+lösen|solve;resolve
+verursachen|cause
+fortsetzen|continue
+beenden|finish;end;complete
+vorbereiten|prepare
+organisieren|organize
+planen|plan
+überprüfen|check;verify;review
+bewerten|evaluate;assess;rate
+beweisen|prove
+entwickeln|develop
+verwenden|use
+gelingen|succeed;manage
+scheitern|fail
+sich entschuldigen|apologize
+danken|thank
+bitten|ask;request;beg
+einladen|invite
+ablehnen|refuse;reject;decline
+akzeptieren|accept
+verschieben|postpone;move;delay
+absagen|cancel
+der Grund|reason
+die Ursache|cause
+die Folge|consequence;result
+das Ergebnis|result;outcome
+der Vorteil|advantage;benefit
+der Nachteil|disadvantage;drawback
+die Möglichkeit|possibility;opportunity;option
+die Gelegenheit|opportunity;occasion;chance
+die Entscheidung|decision
+die Meinung|opinion;view
+der Vorschlag|suggestion;proposal
+die Erfahrung|experience
+das Wissen|knowledge
+die Absicht|intention;intent
+der Zweck|purpose
+das Ziel|goal;target;aim;destination
+die Lösung|solution
+die Aufgabe|task;job;assignment
+der Unterschied|difference
+die Bedingung|condition
+die Voraussetzung|requirement;prerequisite
+der Zusammenhang|context;connection
+die Beziehung|relationship;relation
+die Gesellschaft|society;company
+die Regierung|government
+die Wirtschaft|economy
+die Umwelt|environment
+die Gesundheit|health
+die Sicherheit|safety;security
+die Verantwortung|responsibility
+der Erfolg|success
+die Mühe|effort;trouble
+der Zustand|condition;state
+der Eindruck|impression
+die Aussage|statement
+die Bedeutung|meaning;importance;significance
+`;
+const TECH_RAW = `
+die Schraube|screw;bolt
+die Mutter (Schraube)|nut
+die Unterlegscheibe|washer
+der Bolzen|bolt;pin
+der Stift (Maschinenbau)|pin;dowel;dowel pin
+der Niet|rivet
+die Welle|shaft
+das Lager|bearing
+das Kugellager|ball bearing
+das Zahnrad|gear;gear wheel;cog
+das Getriebe|gearbox;transmission;gear unit
+die Feder (Technik)|spring
+die Dichtung|seal;gasket
+der Dichtring|o-ring;seal ring;sealing ring
+die Kupplung|clutch;coupling
+die Bremse|brake
+die Achse|axle;axis
+die Kette|chain
+der Riemen|belt
+die Riemenscheibe|pulley
+der Hebel|lever
+das Gewinde|thread
+die Bohrung|bore;hole
+der Bohrer|drill bit;drill
+die Bohrmaschine|drill;power drill;drill press
+die Drehmaschine|lathe
+die Fräsmaschine|milling machine;mill
+die Werkzeugmaschine|machine tool
+fräsen|mill
+bohren|drill
+schleifen|grind;sand
+schweißen|weld
+löten|solder
+gießen (Metall)|cast
+schmieden|forge
+biegen|bend
+stanzen|punch;stamp
+montieren|assemble;mount;install
+demontieren|disassemble;dismantle
+festziehen|tighten
+lockern|loosen
+schmieren|lubricate;grease
+messen|measure
+die Toleranz|tolerance
+die Passung|fit
+das Maß|dimension;measurement
+der Durchmesser|diameter
+die Länge|length
+die Breite|width
+die Höhe|height
+die Tiefe|depth
+die Dicke|thickness
+das Gewicht|weight
+die Kraft|force;strength
+das Drehmoment|torque
+die Drehzahl|speed;rpm;rotational speed
+die Leistung|power;performance;output
+der Wirkungsgrad|efficiency
+die Reibung|friction
+der Verschleiß|wear;wear and tear
+die Spannung (Material)|stress
+die Spannung (Elektrik)|voltage
+der Strom (Elektrik)|current;electric current
+der Widerstand|resistance;resistor
+die Last|load
+die Verformung|deformation
+die Festigkeit|strength
+die Härte|hardness
+der Stahl|steel
+der Edelstahl|stainless steel
+das Aluminium|aluminum
+das Kupfer|copper
+das Messing|brass
+das Gusseisen|cast iron
+der Kunststoff|plastic
+der Werkstoff|material
+das Blech|sheet metal;sheet
+das Rohr|pipe;tube
+der Schlauch|hose
+das Gehäuse|housing;casing;case
+der Rahmen|frame
+die Halterung|bracket;mount;holder
+das Bauteil|component;part
+das Ersatzteil|spare part;replacement part
+die Baugruppe|assembly;subassembly
+die Zeichnung|drawing
+die Konstruktion|design;construction
+die Stückliste|bill of materials;parts list;bom
+die Fertigung|manufacturing;production
+die Serienfertigung|mass production;series production
+der Prototyp|prototype
+die Qualitätssicherung|quality assurance;quality control
+die Prüfung|test;inspection
+der Prüfstand|test bench;test stand;test rig
+die Inbetriebnahme|commissioning;startup
+die Wartung|maintenance;servicing
+der Ausfall|failure;breakdown;outage
+die Störung|malfunction;fault
+der Elektromotor|electric motor
+der Antrieb|drive;drive system
+der Sensor|sensor
+der Schalter|switch
+die Steuerung|control system;controller;control
+der Regler|controller;regulator
+der Schraubenschlüssel|wrench;spanner
+der Schraubendreher|screwdriver
+die Zange|pliers
+die Feile|file
+der Schraubstock|vise;vice
+die Säge|saw
+die Hydraulik|hydraulics
+die Pneumatik|pneumatics
+der Druck|pressure
+der Druckabfall|pressure drop
+der Durchfluss|flow rate;flow
+die Pumpe|pump
+der Zylinder|cylinder
+der Kolben|piston
+die Kolbenstange|piston rod
+das Ventil|valve
+das Wegeventil|directional valve;directional control valve
+das Druckbegrenzungsventil|pressure relief valve;relief valve
+das Rückschlagventil|check valve;non-return valve
+das Hydrauliköl|hydraulic oil;hydraulic fluid
+der Tank|tank;reservoir
+der Filter|filter
+der Hydrospeicher|accumulator;hydraulic accumulator
+die Leitung|line;pipe
+die Verschraubung|fitting;screw fitting
+das Leck|leak
+undicht|leaking;leaky
+dicht|sealed;tight;leak-proof
+entlüften|bleed;vent
+der Kompressor|compressor
+die Druckluft|compressed air
+das Manometer|pressure gauge;manometer
+die Viskosität|viscosity
+die Temperatur|temperature
+der Verbrennungsmotor|combustion engine;internal combustion engine
+der Zylinderkopf|cylinder head
+die Kurbelwelle|crankshaft
+die Nockenwelle|camshaft
+der Auspuff|exhaust;muffler;exhaust pipe
+der Kühler|radiator
+die Zündkerze|spark plug
+die Autobatterie|car battery;battery
+die Lichtmaschine|alternator
+der Anlasser|starter;starter motor
+das Lenkrad|steering wheel
+die Lenkung|steering
+das Fahrwerk|chassis;suspension;running gear
+der Stoßdämpfer|shock absorber;shock
+der Reifen|tire
+die Felge|rim;wheel rim
+das Rad|wheel
+der Kotflügel|fender
+die Motorhaube|hood
+der Kofferraum|trunk
+die Windschutzscheibe|windshield
+der Scheibenwischer|windshield wiper;wiper
+der Scheinwerfer|headlight;headlamp
+das Rücklicht|taillight;tail light
+die Stoßstange|bumper
+das Armaturenbrett|dashboard;dash
+der Tacho|speedometer
+das Gaspedal|gas pedal;accelerator
+die Bremsscheibe|brake rotor;brake disc;rotor
+der Bremsbelag|brake pad
+der Kraftstoff|fuel;gas;gasoline
+die Tankstelle|gas station
+der Ölwechsel|oil change
+die Karosserie|body;car body;bodywork
+der Allradantrieb|all-wheel drive;four-wheel drive;awd
+das Schaltgetriebe|manual transmission;stick shift
+das Automatikgetriebe|automatic transmission
+der Gang (Auto)|gear
+das Elektroauto|electric car;electric vehicle;ev
+die Ladesäule|charging station;charger
+der Zulieferer|supplier
+der Hersteller|manufacturer
+das Fließband|assembly line;conveyor belt
+der Rückruf|recall
+der Verbrauch|fuel consumption;consumption
+die Abgase|emissions;exhaust gases;exhaust
+der Modellbau|model making;model building;scale modeling
+der Maßstab|scale
+der Bausatz|kit;model kit
+der Klebstoff|glue;adhesive
+kleben|glue;stick
+lackieren|paint;spray paint
+die Grundierung|primer
+der Pinsel|brush;paintbrush
+das Schleifpapier|sandpaper
+das Cuttermesser|utility knife;box cutter;craft knife
+die Pinzette|tweezers
+das Servo|servo
+der Akku|battery;rechargeable battery
+die Fernsteuerung|remote control;radio control;rc
+der Empfänger|receiver
+der Sender|transmitter
+der Propeller|propeller;prop
+der Rumpf|fuselage;hull
+die Tragfläche|wing
+die Lackierung|paint job;finish;paint
+der 3D-Drucker|3d printer
+das Abziehbild|decal
+das Sperrholz|plywood
+das Balsaholz|balsa wood;balsa
+die Schablone|template;stencil
+`;
+const PHRASES_RAW = `
+Ich melde mich dazu bei dir.|I'll get back to you on that.;I'll get back to you.
+Kannst du das kurz erklären?|Can you explain that briefly?;Could you explain that quickly?;Can you briefly explain that?
+Das ergibt Sinn.|That makes sense.;Makes sense.
+Ich bin ganz deiner Meinung.|I totally agree.;I completely agree with you.;I fully agree.
+Da bin ich mir nicht sicher.|I'm not sure about that.;I'm not so sure.
+Lass uns das nächste Woche besprechen.|Let's discuss that next week.;Let's talk about it next week.
+Hast du kurz Zeit?|Do you have a minute?;Got a minute?;Do you have a second?
+Ich verstehe, was du meinst.|I see what you mean.;I understand what you mean.;I get what you mean.
+Kannst du das bitte wiederholen?|Could you repeat that, please?;Can you say that again?;Could you say that again?
+Wie ist der aktuelle Stand?|What's the current status?;Where are we on this?;What's the status?
+Wir liegen im Zeitplan.|We're on track.;We're on schedule.
+Wir liegen hinter dem Zeitplan.|We're behind schedule.
+Das hat für uns Priorität.|That's a priority for us.;This is our top priority.
+Ich kümmere mich darum.|I'll take care of it.;I'll handle it.;I'm on it.
+Gute Frage.|Good question.;That's a good question.
+Lass mich kurz nachdenken.|Let me think about it.;Let me think for a second.
+Was schlägst du vor?|What do you suggest?;What would you suggest?
+Ich schlage vor, dass wir warten.|I suggest we wait.;I suggest that we wait.
+Das ist ein guter Punkt.|That's a good point.;Good point.
+Ich sehe das etwas anders.|I see it a bit differently.;I see that a little differently.
+Kannst du mir das per E-Mail schicken?|Can you email me that?;Could you send me that by email?;Could you email that to me?
+Ich schicke dir die Unterlagen.|I'll send you the documents.;I'll send you the files.
+Danke für deine Hilfe.|Thanks for your help.;Thank you for your help.
+Kein Problem.|No problem.;No worries.
+Entschuldige die Verspätung.|Sorry I'm late.;Sorry for the delay.;Sorry for being late.
+Ich bin gleich zurück.|I'll be right back.;Be right back.
+Wann passt es dir?|When works for you?;What time works for you?;When is good for you?
+Passt dir Dienstag?|Does Tuesday work for you?;Is Tuesday okay for you?;How about Tuesday?
+Lass uns einen Termin ausmachen.|Let's set up a meeting.;Let's schedule a meeting.;Let's set up a call.
+Ich muss das Meeting verschieben.|I need to reschedule the meeting.;I have to reschedule the meeting.
+Können wir anfangen?|Shall we get started?;Can we get started?;Can we start?
+Lass uns zum nächsten Punkt kommen.|Let's move on to the next point.;Let's move on.
+Hat noch jemand Fragen?|Any other questions?;Does anyone have any questions?;Any questions?
+Ich fasse kurz zusammen.|Let me sum up.;Let me summarize.;To sum up.
+Was sind die nächsten Schritte?|What are the next steps?
+Wer ist dafür zuständig?|Who's in charge of that?;Who is responsible for that?;Who owns this?
+Ich halte dich auf dem Laufenden.|I'll keep you posted.;I'll keep you updated.;I'll keep you in the loop.
+Das klingt gut.|Sounds good.;That sounds good.;Sounds great.
+Das ist eine gute Idee.|That's a good idea.;Good idea.
+Ich bin nicht überzeugt.|I'm not convinced.
+Wir sollten das im Auge behalten.|We should keep an eye on that.;We should keep an eye on it.
+Das kommt darauf an.|It depends.;That depends.
+Kannst du mir einen Gefallen tun?|Can you do me a favor?;Could you do me a favor?
+Ich habe gerade viel zu tun.|I have a lot on my plate right now.;I'm really busy right now.;I have a lot to do right now.
+Das ist dringend.|This is urgent.;It's urgent.
+Bis wann brauchst du das?|When do you need it by?;When do you need this?
+Ich brauche das bis Freitag.|I need it by Friday.;I need that by Friday.
+Ich arbeite heute von zu Hause.|I'm working from home today.
+Meine Verbindung ist schlecht.|I have a bad connection.;My connection is bad.;My connection is poor.
+Du bist stummgeschaltet.|You're on mute.;You're muted.
+Kannst du deinen Bildschirm teilen?|Can you share your screen?;Could you share your screen?
+Hört ihr mich?|Can you hear me?
+Wie war dein Wochenende?|How was your weekend?
+Hast du Pläne fürs Wochenende?|Any plans for the weekend?;Do you have any plans for the weekend?
+Wie läuft's?|How's it going?;How are things?
+Lange nicht gesehen.|Long time no see.
+Schön, dich kennenzulernen.|Nice to meet you.;It's nice to meet you.
+Woran arbeitest du gerade?|What are you working on right now?;What are you working on?
+Ich freue mich darauf.|I'm looking forward to it.;Looking forward to it.
+Viel Erfolg!|Good luck!;Best of luck!
+Gut gemacht!|Great job!;Good job!;Well done!
+Das war mein Fehler.|My bad.;That was my mistake.;That's my fault.
+Gern geschehen.|You're welcome.;Don't mention it.;No problem.
+Das sehe ich genauso.|I feel the same way.;I agree.;I think so too.
+Lass uns das separat besprechen.|Let's take this offline.;Let's discuss this separately.
+Lass uns kurz telefonieren.|Let's hop on a quick call.;Let's have a quick call.;Let's jump on a call.
+Ich muss leider los.|Sorry, I have to go.;I'm afraid I have to go.;I have to run.
+Bis später!|Talk to you later!;See you later!;Catch you later!
+Schönen Feierabend!|Have a good evening!;Have a nice evening!;Enjoy your evening!
+Schönes Wochenende!|Have a great weekend!;Have a nice weekend!;Have a good weekend!
+Das Budget ist knapp.|The budget is tight.;We're on a tight budget.
+Wir müssen Kosten sparen.|We need to cut costs.;We need to reduce costs.
+Die Frist ist zu knapp.|The deadline is too tight.;The deadline is too short.
+Können wir die Frist verlängern?|Can we extend the deadline?;Could we push the deadline?
+Ich gebe dir bis morgen Bescheid.|I'll let you know by tomorrow.
+Gib mir Bescheid.|Let me know.
+Was meinst du damit?|What do you mean by that?;What do you mean?
+Mach dir keine Sorgen.|Don't worry about it.;Don't worry.;No worries.
+Darf ich kurz unterbrechen?|Sorry to interrupt.;Can I jump in?;May I interrupt for a second?
+Lass uns für heute Schluss machen.|Let's call it a day.;Let's wrap it up for today.
+`;
+const VOCAB = [];
+const byId = new Map();
+for (const line of VOCAB_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en || byId.has(de.trim())) continue;
+  const item = { id: de.trim(), de: de.trim(), deck: 'w', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  VOCAB.push(item); byId.set(item.id, item);
+}
+for (const line of TECH_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en) continue;
+  const item = { id: 't:' + de.trim(), de: de.trim(), deck: 't', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  if (byId.has(item.id)) continue;
+  VOCAB.push(item); byId.set(item.id, item);
+}
+for (const line of PHRASES_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en) continue;
+  const item = { id: 'p:' + de.trim(), de: de.trim(), deck: 'p', en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  if (byId.has(item.id)) continue;
+  VOCAB.push(item); byId.set(item.id, item);
+}
+
+/* ---------- Antwortvergleich ---------- */
+const HOMO = [['to','too','two','2'],['no','know'],['right','write'],['see','sea'],['son','sun'],['meet','meat'],['night','knight'],['our','hour'],['flower','flour'],['week','weak'],['read','red'],['buy','by','bye'],['hear','here'],['pear','pair'],['new','knew'],['whole','hole'],['die','dye'],['weather','whether'],['wait','weight'],['ate','eight','8'],['for','four','4'],['won','one','1'],['cell','sell'],['dear','deer'],['wear','where'],['blue','blew'],['hi','high'],['gray','grey'],['neighbor','neighbour'],['color','colour'],['mom','mum'],['tv','tee vee'],['steal','steel'],['sale','sail'],['plane','plain'],['made','maid'],['mail','male'],['bored','board'],['tea','tee'],['bee','be','b'],['eye','i','aye'],['ok','okay'],['pharmacy','farmacy']];
+const CANON = new Map();
+for (const g of HOMO) for (const w of g) CANON.set(w, g[0]);
+function expand(s) {
+  return s.replace(/\bcan't\b/g, 'can not').replace(/\bwon't\b/g, 'will not').replace(/\blet's\b/g, 'let us')
+    .replace(/n't\b/g, ' not').replace(/'re\b/g, ' are').replace(/'ll\b/g, ' will').replace(/'m\b/g, ' am')
+    .replace(/'ve\b/g, ' have').replace(/'d\b/g, ' would')
+    .replace(/\b(it|that|what|how|there|here|he|she|who|where|when|everything|this)'s\b/g, '$1 is');
+}
+function tokens(s) {
+  return expand(s.toLowerCase().replace(/[’`´]/g, "'")).replace(/[^a-z0-9' ]+/g, ' ')
+    .split(/\s+/).filter(Boolean).map(t => t.replace(/^'+|'+$/g, '')).filter(Boolean)
+    .map(t => CANON.get(t) || t);
+}
+const ART = new Set(['a', 'an', 'the', 'to']);
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i), cur = new Array(n + 1);
+  for (let i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+function stem(w) { return w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w; }
+function matches(text, answers) {
+  const t = tokens(text); if (!t.length) return false;
+  for (const ans of answers) {
+    let a = tokens(ans);
+    while (a.length > 1 && ART.has(a[0])) a = a.slice(1);
+    if (!a.length) continue;
+    const target = a.join(''); const tol = target.length >= 10 ? 2 : target.length >= 7 ? 1 : 0;
+    for (let size = Math.max(1, a.length - 1); size <= a.length + 1; size++) {
+      for (let i = 0; i + size <= t.length; i++) {
+        const w = t.slice(i, i + size).join('');
+        if (w === target || stem(w) === stem(target) || (tol && Math.abs(w.length - target.length) <= tol && lev(w, target) <= tol)) return true;
+      }
+    }
+  }
+  return false;
+}
+function phraseScore(text, ans) {
+  const t = tokens(text).filter(w => !FILLER.has(w)), a = tokens(ans);
+  if (!t.length || !a.length) return { r: 0, p: 0 };
+  const used = new Array(t.length).fill(false); let m = 0;
+  for (const w of a) {
+    for (let i = 0; i < t.length; i++) {
+      if (used[i]) continue; const x = t[i];
+      if (x === w || stem(x) === stem(w) || (w.length >= 5 && lev(x, w) <= 1)) { used[i] = true; m++; break; }
+    }
+  }
+  return { r: m / a.length, p: m / t.length };
+}
+function isRight(text, item, partial) {
+  if (!item) return false;
+  if (item.deck !== 'p') return matches(text, item.en);
+  return item.en.some(ans => { const { r, p } = phraseScore(text, ans); return partial ? r >= 1 && p >= 0.75 : (r >= 0.8 && p >= 0.6); });
+}
+const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
+const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
+const BLOCK_CMD = ["delete", "remove", "block", "delete word", "remove word", "delete this", "delete that", "remove that", "delete it", "remove it"];
+const STOP_CMD = ["end session", "stop session", "stop training", "end training", "finish session", "finish training", "stop the session", "end the session", "i'm done", "i am done", "we're done", "that's it for today"];
+function isStopCmd(text) { const n = tokens(text).join(' '); return STOP_CMD.some(p => n === tokens(p).join(' ')); }
+async function stopByVoice() {
+  const r = session.right, w = session.wrong;
+  pause();
+  $('fb').innerHTML = '<span class="alt">Session beendet</span>';
+  await say('Session beendet. ' + r + ' richtig, ' + w + ' falsch.', 'de');
+}
+function isBlockCmd(text) { const n = tokens(text).join(' '); return BLOCK_CMD.some(p => n === p); }
+function isPass(text) { const t = tokens(text); const n = t.join(' '); return PASS.some(p => n === tokens(p).join(' ')) || (t.length <= 3 && t.some(w => PASS_WORDS.has(w))); }
+const FILLER = new Set(['uh', 'um', 'uhm', 'hmm', 'hm', 'er', 'erm', 'ah', 'eh', 'ahm', 'mm', 'oh', 'well', 'so', 'okay', 'ok']);
+function isFiller(text) { const t = tokens(text); return !t.length || t.every(w => FILLER.has(w)); }
+
+/* ---------- Speicher und Wiederholungsplan ---------- */
+const KEY = 'vokabelsprint.v1';
+const MIN = 60e3, DAY = 864e5;
+const IVL = [0, 10 * MIN, DAY, 3 * DAY, 7 * DAY, 16 * DAY, 35 * DAY, 90 * DAY];
+let S = { words: {}, counter: 0, order: [], settings: {}, blocked: [] };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.words) S = Object.assign(S, s); } catch (e) {}
+function fixOrder() {
+  const have = new Set(S.order.filter(id => byId.has(id)));
+  S.order = S.order.filter(id => byId.has(id));
+  const fresh = VOCAB.map(v => v.id).filter(id => !have.has(id));
+  if (!fresh.length) return;
+  // neue Wörter unter die noch nicht abgefragten mischen
+  const seenIds = S.order.filter(id => S.words[id]);
+  const unseen = S.order.filter(id => !S.words[id]).concat(fresh);
+  for (let i = unseen.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [unseen[i], unseen[j]] = [unseen[j], unseen[i]]; }
+  S.order = seenIds.concat(unseen);
+}
+fixOrder();
+function isBlocked(id) { return S.blocked.includes(id); }
+function curDeck() { return ['p', 't'].includes(set.mode) ? set.mode : 'w'; }
+function usable(id) { const it = byId.get(id); return !!it && it.deck === curDeck() && !S.blocked.includes(id); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+let lastId = null;
+function pick() {
+  S.counter++;
+  const now = Date.now(); const learn = [], due = [];
+  for (const id in S.words) {
+    if (id === lastId || !usable(id)) continue;
+    const w = S.words[id];
+    if (w.learn) learn.push([id, w]); else if (w.due <= now) due.push([id, w]);
+  }
+  learn.sort((a, b) => a[1].dueCard - b[1].dueCard);
+  if (learn.length && learn[0][1].dueCard <= S.counter) return learn[0][0];
+  if (learn.length >= 8) return learn[0][0];
+  if (due.length) { due.sort((a, b) => a[1].due - b[1].due); return due[0][0]; }
+  const nw = S.order.find(id => !S.words[id] && id !== lastId && usable(id));
+  if (nw) return nw;
+  if (learn.length) return learn[0][0];
+  let best = null;
+  for (const id in S.words) { if (id === lastId || !usable(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
+  return best || S.order.find(id => usable(id)) || S.order[0];
+}
+const FAST_MS = 3000, SLOW_MS = 6000;
+function grade(id, ok, rt) {
+  const now = Date.now(); const isNew = !S.words[id];
+  const k = byId.get(id) && byId.get(id).deck === 'p' ? 1.8 : 1;
+  const speed = rt == null || rt < FAST_MS * k ? 'fast' : rt < SLOW_MS * k ? 'mid' : 'slow';
+  const w = S.words[id] || (S.words[id] = { box: 0, due: 0, learn: false, step: 0, dueCard: 0, right: 0, wrong: 0 });
+  w.last = now;
+  if (ok) {
+    w.right++; if (rt != null) w.rt = rt;
+    if (w.learn) {
+      if (speed === 'slow') { w.dueCard = S.counter + 4; save(); return; }
+      w.step++;
+      if (w.step >= 2) { w.learn = false; w.box = 1; w.due = now + IVL[1]; } else w.dueCard = S.counter + 6;
+    } else if (speed === 'slow') { w.learn = true; w.step = 1; w.box = 0; w.dueCard = S.counter + 6; }
+    else if (isNew) { w.box = speed === 'fast' ? 3 : 2; w.due = now + IVL[w.box]; }
+    else if (speed === 'mid') { w.box = Math.max(1, w.box); w.due = now + IVL[w.box]; }
+    else { w.box = Math.min(w.box + 1, 7); w.due = now + IVL[w.box]; }
+  } else { w.wrong++; w.learn = true; w.step = 0; w.box = 0; w.dueCard = S.counter + 3; }
+  save();
+}
+
+/* ---------- Einstellungen ---------- */
+const $ = id => document.getElementById(id);
+const set = Object.assign({ mode: 'w', scenario: 'smalltalk', speakDe: true, beep: true, voiceEn: '', voiceDe: '', waitSec: 7 }, S.settings || {});
+function saveSettings() { S.settings = set; save(); }
+$('optSpeakDe').checked = set.speakDe; $('optBeep').checked = set.beep;
+$('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings(); };
+$('optWait').value = String(set.waitSec);
+$('optWait').onchange = e => { set.waitSec = +e.target.value; saveSettings(); };
+$('optBeep').onchange = e => { set.beep = e.target.checked; saveSettings(); };
+
+/* ---------- Sprachausgabe ---------- */
+const synth = window.speechSynthesis || null;
+let voices = [];
+function voicesFor(lang) { return voices.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith(lang)); }
+function bestVoice(lang) {
+  const pref = set[lang === 'en' ? 'voiceEn' : 'voiceDe'];
+  const list = voicesFor(lang);
+  return list.find(v => v.voiceURI === pref) ||
+    (lang === 'en' ? (us => us.find(v => /google|natural|premium|enhanced|neural|siri/i.test(v.name)) || us.find(v => /samantha|alex|allison|ava|tom|aaron|nicky/i.test(v.name)) || us[0])(list.filter(v => /en-us/i.test(v.lang.replace('_', '-')))) : null) ||
+    list.find(v => /google|natural|premium|enhanced|neural/i.test(v.name)) || list[0] || null;
+}
+function fillVoices() {
+  if (!synth) return;
+  voices = synth.getVoices();
+  for (const [lang, sel] of [['en', $('voiceEn')], ['de', $('voiceDe')]]) {
+    const list = voicesFor(lang); const cur = bestVoice(lang);
+    sel.innerHTML = '';
+    if (!list.length) { const o = document.createElement('option'); o.textContent = 'Standardstimme'; sel.append(o); continue; }
+    for (const v of list) { const o = document.createElement('option'); o.value = v.voiceURI; o.textContent = v.name + ' (' + v.lang + ')'; if (cur && v.voiceURI === cur.voiceURI) o.selected = true; sel.append(o); }
+  }
+}
+if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
+$('voiceEn').onchange = e => { set.voiceEn = e.target.value; saveSettings(); };
+$('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
+
+let lastMicOff = 0, sayTurn = 0, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
+const GRACE = 600;
+// iPhone (Halbduplex): Mikro und Lautsprecher nie gleichzeitig. Ablauf je Wort:
+// Wort zeigen → Mikro sicher aus → kurze Pause → vorlesen → echtes Ende abwarten → Mikro an → zuhören.
+const GATE = () => IS_IOS && !dict;
+function say(text, lang) {
+  return new Promise(async res => {
+    if (!synth) { res(); return; }
+    const myTurn = ++sayTurn;
+    speaking = true; setMic(); syncMic(); dlog('Sprachausgabe: ' + text);
+    // Safari verschluckt ein speak() direkt nach cancel(). Nur abbrechen, wenn wirklich etwas läuft.
+    let hadOld = false;
+    try { if (synth.speaking || synth.pending) { synth.cancel(); hadOld = true; } } catch (e) {}
+    if (GATE()) await micOff();
+    if (hadOld || (GATE() && Date.now() - lastMicOff < 400)) await sleep(300);
+    if (myTurn !== sayTurn) { res(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+    // iPhone: nur eine selbst gewählte Stimme setzen. Automatisch gewählte „Premium“-Stimmen sind oft nicht geladen und bleiben stumm.
+    const pref = set[lang === 'en' ? 'voiceEn' : 'voiceDe'];
+    const v = IS_IOS ? (pref ? voices.find(x => x.voiceURI === pref) : null) : bestVoice(lang); if (v) u.voice = v;
+    try { synth.resume(); } catch (e) {}
+    u.rate = lang === 'de' ? 1.15 : 0.95;
+    let done = false, t = null;
+    const fin = () => {
+      if (done) return; done = true; clearTimeout(t);
+      if (myTurn !== sayTurn) { res(); return; }
+      speaking = false; quietUntil = Date.now() + (GATE() ? 0 : GRACE); lastSpoken = { text, end: Date.now() };
+      if (!GATE()) setTimeout(flushMuted, GRACE + 20);
+      setMic(); res();
+    };
+    // Notbremse erst ab dem echten Start der Ausgabe messen (iPhone braucht manchmal 1–3 s bis zum Start).
+    t = setTimeout(() => { dlog('Sprachausgabe startet nicht'); try { synth.cancel(); } catch (x) {} fin(); }, 6000);
+    u.onend = fin; u.onerror = e => { dlog('Sprachausgabe-Fehler: ' + (e && e.error)); fin(); };
+    u.onstart = () => { dlog('Sprachausgabe läuft'); clearTimeout(t); t = setTimeout(() => { try { synth.cancel(); } catch (x) {} fin(); }, 2500 + text.length * 130); };
+    synth.speak(u);
+  });
+}
+// Einzige Stelle, die das Mikro ein- oder ausschaltet.
+let recBusy = false, recBusyAt = 0, syncT = null, onMicStart = null;
+function micWanted() {
+  if (!rec || dict || !wantListen || !running || needTap) return false;
+  if (!GATE()) return true;
+  return phase === 'answer' && !speaking;
+}
+function syncMic() {
+  clearTimeout(syncT);
+  if (!rec || dict) return;
+  if (recBusy && Date.now() - recBusyAt > 4000) recBusy = false;
+  if (micWanted()) {
+    if (listening || recBusy) return;
+    syncT = setTimeout(() => {
+      if (!micWanted() || listening || recBusy) return;
+      recBusy = true; recBusyAt = Date.now();
+      try { rec.start(); dlog('Mikro an'); } catch (e) { recBusy = false; dlog('Mikro-Start abgelehnt'); syncT = setTimeout(syncMic, 500); }
+    }, 150);
+  } else if (listening || recBusy) { try { rec.abort(); } catch (e) {} }
+}
+function micOff() {
+  return new Promise(r => {
+    if (!rec || dict || (!listening && !recBusy)) return r();
+    try { rec.abort(); } catch (e) {}
+    const t0 = Date.now();
+    const iv = setInterval(() => { if ((!listening && !recBusy) || Date.now() - t0 > 900) { clearInterval(iv); listening = false; recBusy = false; r(); } }, 30);
+  });
+}
+let actx = null;
+function beep() {
+  if (!set.beep) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.exponentialRampToValueAtTime(1320, t + 0.07);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.13);
+  } catch (e) {}
+}
+
+/* ---------- Spracherkennung: Plattform-Diktat oder Web Speech API ---------- */
+let dict = null, dictResolved = false, rec = null, listening = false, wantListen = false, micError = '';
+const DIAG = [];
+function dlog(m) {
+  const t = new Date(); DIAG.push(String(t.getMinutes()).padStart(2, '0') + ':' + String(t.getSeconds()).padStart(2, '0') + ' ' + m);
+  if (DIAG.length > 40) DIAG.shift();
+  const el = document.getElementById('diag'); if (el) el.textContent = DIAG.slice().reverse().join('\n');
+}
+let dictNoLang = false, recEverStarted = false, needTap = false, restartTries = 0;
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IOS_HELP = IS_IOS
+  ? 'Mikrofon nicht erlaubt. Bitte prüfen: 1) Einstellungen → Apps → Safari → Mikrofon auf „Fragen“ oder „Erlauben“. 2) Einstellungen → Allgemein → Tastatur → „Diktierfunktion“ einschalten (Safari braucht sie für die Spracherkennung). 3) Die Seite in Safari selbst öffnen, nicht über das Homescreen-Symbol. Danach Seite neu laden und Start drücken.'
+  : 'Mikrofon nicht erlaubt. Bitte in der Adressleiste beim Schloss-Symbol das Mikrofon erlauben und die Seite neu laden. Du kannst die Antworten auch tippen.';
+// Safari darf das Mikrofon manchmal nur nach einem Antippen wieder einschalten
+document.addEventListener('pointerdown', e => {
+  if (!needTap || !running || !rec || e.target.closest('#startBtn')) return;
+  needTap = false; tapConsumedAt = Date.now(); if (!GATE() || micWanted()) { recBusy = true; recBusyAt = Date.now(); try { rec.start(); } catch (err) { recBusy = false; } } setMic();
+}, true);
+let tapConsumedAt = 0;
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function engineLabel() {
+  $('engine').textContent = dict ? 'Spracherkennung: Claude-Diktat' : SR ? 'Spracherkennung: Browser' : 'Keine Spracherkennung, bitte tippen';
+}
+if (window.claude && typeof window.claude.use === 'function') {
+  window.claude.use('dictation').then(d => {
+    dict = d; dictResolved = true; engineLabel();
+    if (!d) return;
+    d.onPartial(({ text }) => onPartial(text));
+    d.onFinal(({ text }) => onFinal([text]));
+    d.onState(({ state, reason }) => {
+      listening = state === 'listening';
+      if (state === 'idle' && reason) {
+        if (reason === 'unavailable' && !dictNoLang) { dictNoLang = true; micError = 'Englisches Diktat nicht verfügbar. Drück noch einmal auf Start.'; pause(); }
+        else if (['not_granted', 'unavailable', 'upstream_error', 'rate_limited'].includes(reason)) { micError = reason === 'not_granted' ? 'Mikrofon nicht erlaubt. Du kannst die Antworten tippen.' : 'Spracherkennung hat gerade ein Problem. Nochmal Start drücken oder tippen.'; pause(); }
+        else if (running) pause();
+      }
+      setMic();
+    });
+  }).catch(() => { dictResolved = true; engineLabel(); });
+} else { dictResolved = true; engineLabel(); }
+engineLabel();
+
+function startListening() {
+  wantListen = true; micError = '';
+  if (dict) {
+    dict.start(dictNoLang ? undefined : { language: 'en' }).catch(e => {
+      if (e && e.code === 'unavailable' && !dictNoLang) { dictNoLang = true; micError = 'Englisches Diktat nicht verfügbar. Drück noch einmal auf Start.'; }
+      else if (e && e.code !== 'stopped') micError = e.code === 'not_granted' ? 'Mikrofon nicht erlaubt. Du kannst die Antworten tippen.' : 'Spracherkennung konnte nicht starten (' + (e.code || 'Fehler') + '). Du kannst tippen.';
+      if (micError) { pause(); }
+      setMic();
+    });
+    return;
+  }
+  if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
+  if (!rec) {
+    rec = new SR(); rec.lang = 'en-US'; rec.continuous = !IS_IOS; rec.interimResults = true; if (!IS_IOS) rec.maxAlternatives = 3;
+    rec.onaudiostart = () => dlog('Audio an'); rec.onspeechstart = () => dlog('Sprache erkannt');
+    rec.onstart = () => { dlog('Erkennung gestartet'); listening = true; recBusy = false; recEverStarted = true; needTap = false; if (onMicStart) { const f = onMicStart; onMicStart = null; f(); } if (GATE() && phase === 'answer' && !firstHeardAt) readyAt = Math.max(readyAt, Date.now()); setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); if (!micWanted() && !onMicStartKeep()) { try { rec.abort(); } catch (x) {} } };
+    rec.onresult = e => {
+      try { dlog('Ergebnis: ' + e.results[e.results.length - 1][0].transcript); } catch (x) {}
+      lastResultAt = Date.now(); silentMisses = 0;
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) onFinal(Array.from(r).map(a => a.transcript));
+        else interim += r[0].transcript;
+      }
+      if (interim) onPartial(interim);
+    };
+    rec.onerror = e => {
+      dlog('Fehler: ' + e.error);
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(syncMic, 700); return; } needTap = true; setMic(); return; }
+        micError = IOS_HELP; wantListen = false; pause();
+      }
+      else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
+      setMic();
+    };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; recBusy = false; lastMicOff = Date.now(); if (onMicStart) { const f = onMicStart; onMicStart = null; f(); } setMic(); syncMic(); };
+  }
+  // Erster Start direkt im Antippen (Safari will dafür eine Berührung, hier kommt auch die Erlaubnisabfrage)
+  if (!listening && !recBusy) { recBusy = true; recBusyAt = Date.now() + 8000; try { rec.start(); } catch (e) { recBusy = false; } }
+}
+function onMicStartKeep() { return !running || phase === 'idle'; }
+function stopListening() {
+  wantListen = false;
+  if (dict) { dict.stop().catch(() => {}); }
+  if (rec) { try { rec.abort(); } catch (e) {} }
+}
+
+/* ---------- Ablauf ---------- */
+let running = false, phase = 'idle', cur = null;
+let pending = '', pendingTimer = null, swallowUntil = 0, mutedText = '', prevCard = { en: [], at: 0 };
+let session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
+const recentWrong = [];
+function isMuted() { return speaking || Date.now() < quietUntil; }
+function isEcho(text) {
+  const now = Date.now();
+  if (now - lastSpoken.end < 4000 && matches(text, [lastSpoken.text])) return true;
+  if (now - prevCard.at < 5000 && prevCard.item && isRight(text, prevCard.item)) return true;
+  return false;
+}
+function showHeard(text, partial) {
+  const h = $('heard'); h.className = 'heard' + (partial ? ' partial' : '');
+  h.innerHTML = text ? 'Gehört: <b></b>' : '';
+  if (text) h.querySelector('b').textContent = text;
+}
+function onPartial(text) {
+  text = (text || '').trim(); if (!text || !running) return;
+  if (phase !== 'answer') return;
+  if (isMuted()) { mutedText = text; return; }
+  markHeard();
+  if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+  const combined = (pending + ' ' + text).trim();
+  showHeard(combined, true); armSilence();
+  if (isRight(combined, cur, true)) { swallowUntil = Date.now() + 2500; accept(true, combined); }
+}
+function onFinal(alts) {
+  alts = alts.map(a => (a || '').trim()).filter(Boolean); if (!alts.length || !running) return;
+  if (swallowUntil && Date.now() < swallowUntil) { swallowUntil = 0; return; }
+  swallowUntil = 0;
+  if (phase !== 'answer') return;
+  if (isMuted()) { mutedText = alts[0]; return; }
+  markHeard();
+  const ok = alts.find(a => isRight((pending + ' ' + a).trim(), cur));
+  if (ok) return accept(true, (pending + ' ' + ok).trim());
+  const text = alts[0];
+  if (isStopCmd(text)) return stopByVoice();
+  if (isBlockCmd(text)) return blockByVoice();
+  if (isEcho(text) || isFiller(text)) return;
+  const combined = (pending + ' ' + text).trim();
+  if (isPass(text)) return accept(false, '');
+  pending = combined; showHeard(combined, false);
+  clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, cur && cur.deck === 'p' ? 1600 : 900);
+}
+let lastWrong = { id: null, at: 0 };
+let advanceToken = 0;
+async function blockByVoice() {
+  if (!cur) return;
+  const tok = ++advanceToken;
+  const target = (lastWrong.id && lastWrong.id !== cur.id && Date.now() - lastWrong.at < 8000) ? lastWrong.id : cur.id;
+  const item = byId.get(target);
+  blockWord(target);
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer); syncMic();
+  $('card').className = 'card'; $('fb').innerHTML = '<span class="alt">Ausgeblendet: ' + esc(item.de) + '</span>';
+  if (!running) return;
+  await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, '').replace(/\s*\(.+\)/, ''), 'de');
+  if (running && tok === advanceToken) next();
+}
+function blockWord(id) {
+  if (!isBlocked(id)) S.blocked.push(id);
+  for (let i = recentWrong.length - 1; i >= 0; i--) if (recentWrong[i].id === id) recentWrong.splice(i, 1);
+  save(); renderRecent(); renderBlocked(); updateStats();
+}
+function unblockWord(id) { S.blocked = S.blocked.filter(x => x !== id); save(); renderBlocked(); updateStats(); }
+function renderBlocked() {
+  $('blockedCount').textContent = S.blocked.length;
+  $('blockedList').innerHTML = S.blocked.length ? S.blocked.filter(id => byId.has(id)).map(id => '<span class="chip"><i>' + esc(byId.get(id).de) + '</i> ' + esc(byId.get(id).en[0]) + ' <button type="button" class="x" data-unblock="' + esc(id) + '" aria-label="Zurückholen">↺</button></span>').join('') : '<span class="muted">Noch keine.</span>';
+}
+let readyAt = 0, firstHeardAt = 0;
+function markHeard() { if (!firstHeardAt) firstHeardAt = Math.max(Date.now(), readyAt); }
+let silenceTimer = null, lastResultAt = 0, silentMisses = 0;
+function armSilence() {
+  clearTimeout(silenceTimer);
+  if (!set.waitSec || !running || phase !== 'answer') return;
+  const item = cur;
+  silenceTimer = setTimeout(() => {
+    if (!running || phase !== 'answer' || cur !== item) return;
+    if (isMuted() || pending || pendingTimer) { armSilence(); return; }
+    // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
+    if (rec && !dict && !speaking && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
+    accept(false, '');
+  }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
+}
+function flushMuted() {
+  if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
+  const t = mutedText; mutedText = '';
+  if (isStopCmd(t)) return stopByVoice();
+  if (isBlockCmd(t)) return blockByVoice();
+  if (isRight(t, cur)) accept(true, t);
+}
+function renderWord(item) {
+  const m = item.de.match(/^(der|die|das|sich)\s+(.+)$/);
+  const w = $('word'); w.innerHTML = '';
+  if (m) { const a = document.createElement('span'); a.className = 'art'; a.textContent = m[1]; w.append(a, document.createTextNode(m[2])); }
+  else w.textContent = item.de;
+  const pm = w.lastChild && w.lastChild.nodeType === 3 && w.lastChild.textContent.match(/^(.*?)\s*\((.+)\)$/);
+  if (pm) { w.lastChild.textContent = pm[1]; const h = document.createElement('span'); h.className = 'hint'; h.textContent = pm[2]; w.append(h); }
+  w.classList.toggle('long', item.deck === 'p');
+  const st = S.words[item.id];
+  $('tag').textContent = !st ? 'neu' : st.learn ? 'üben' : 'Wiederholung';
+}
+async function next() {
+  if (!running) return;
+  const id = pick(); lastId = id; cur = byId.get(id);
+  pending = ''; mutedText = ''; clearTimeout(pendingTimer); pendingTimer = null;
+  $('card').className = 'card'; $('fb').innerHTML = ''; showHeard('', false);
+  renderWord(cur); phase = 'answer'; readyAt = Date.now(); firstHeardAt = 0; $('blockBtn').hidden = false;
+  updateStats();
+  const myItem = cur;
+  if (set.speakDe) await say(cur.de.replace(/\s*\((.+)\)/, ', $1'), 'de');
+  if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); syncMic(); armSilence(); }
+}
+async function accept(ok, heard) {
+  if (phase !== 'answer' || !cur) return;
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer); syncMic();
+  const item = cur; const tok = ++advanceToken;
+  const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
+  grade(item.id, ok, rt);
+  prevCard = { en: item.en, item, at: Date.now() };
+  if (ok) {
+    session.right++; beep();
+    $('card').className = 'card ok';
+    $('fb').innerHTML = '<span class="okmark">✓ ' + esc(item.en[0]) + '</span><span class="alt">' + (rt / 1000).toFixed(1).replace('.', ',') + ' s' + (rt >= SLOW_MS * (item.deck === 'p' ? 1.8 : 1) ? ' · kommt bald wieder' : rt >= FAST_MS * (item.deck === 'p' ? 1.8 : 1) ? ' · etwas langsam' : '') + '</span>';
+    updateStats();
+    await sleep(set.speakDe ? 150 : 350);
+  } else {
+    session.wrong++; lastWrong = { id: item.id, at: Date.now() };
+    $('card').className = 'card bad';
+    const others = item.en.slice(1, 4);
+    $('fb').innerHTML = '<span class="sol">' + esc(item.en[0]) + '</span>' + (others.length ? '<span class="alt">auch: ' + others.map(esc).join(', ') + '</span>' : '');
+    if (heard) showHeard(heard, false);
+    recentWrong.unshift(item);
+    updateStats(); renderRecent();
+    await say(item.en[0], 'en');
+    await sleep(300);
+  }
+  if (running && tok === advanceToken) next();
+}
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function renderRecent() {
+  const seen = new Set(), list = [];
+  for (const it of recentWrong) { if (seen.has(it.id)) continue; seen.add(it.id); list.push(it); if (list.length >= 8) break; }
+  recentWrong.length = 0; recentWrong.push(...list);
+  $('recentWrap').hidden = !list.length;
+  $('recent').innerHTML = list.map(it => '<span class="chip"><i>' + esc(it.de) + '</i> ' + esc(it.en[0]) + ' <button type="button" class="x" data-block="' + esc(it.id) + '" aria-label="Wort ausblenden">✕</button></span>').join('');
+}
+function updateStats() {
+  setTimeout(driveHint, 0);
+  let known = 0, learn = 0;
+  for (const id in S.words) { if (!usable(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
+  const deckItems = VOCAB.filter(v => v.deck === curDeck());
+  const seen = deckItems.filter(v => S.words[v.id] || isBlocked(v.id)).length;
+  $('sRight').textContent = session.right; $('sWrong').textContent = session.wrong;
+  const ms = session.activeMs + (running ? Date.now() - session.since : 0);
+  const n = session.right + session.wrong;
+  $('sWpm').textContent = n >= 3 && ms > 15000 ? (n / (ms / 60000)).toFixed(1).replace('.', ',') : '–';
+  $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = deckItems.length - seen;
+  $('countInfo').textContent = APP_VERSION + ' · Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter, ' + VOCAB.filter(v => v.deck === 't').length + ' Technikbegriffe und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
+}
+function setMic() {
+  setTimeout(driveHint, 0);
+  const dot = $('dot'), t = $('micText');
+  dot.className = 'dot';
+  if (micError) { dot.classList.add('err'); t.textContent = 'Mikrofon aus'; showNotice(micError); }
+  else { showNotice(''); }
+  if (micError) return;
+  if (!running) { t.textContent = 'Pausiert'; return; }
+  if (speaking) { dot.classList.add('talk'); t.textContent = 'Spricht …'; return; }
+  if (needTap) { dot.classList.add('err'); t.textContent = 'Antippen, um weiterzusprechen'; return; }
+  if (listening) { dot.classList.add('on'); t.textContent = 'Hört zu'; return; }
+  t.textContent = wantListen ? 'Mikrofon startet …' : 'Nur Tippen';
+}
+function showNotice(msg) { const n = $('notice'); n.hidden = !msg; n.textContent = msg; }
+let wakeLock = null;
+function requestWake() { try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => wakeLock = l).catch(() => {}); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running) requestWake(); });
+function start() {
+  if (running) return;
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) {}
+  running = true; session.since = Date.now();
+  startListening();
+  $('startBtn').textContent = 'Pause';
+  requestWake();
+  setMic();
+  if (GATE() && rec && recBusy) { let go = false; const f = () => { if (go) return; go = true; next(); }; onMicStart = f; setTimeout(f, 8000); }
+  else next();
+}
+function pause() {
+  if (running) session.activeMs += Date.now() - session.since;
+  running = false; phase = 'idle';
+  stopListening();
+  try { synth && synth.cancel(); } catch (e) {}
+  speaking = false;
+  $('startBtn').textContent = 'Weiter';
+  try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null;
+  setMic(); updateStats();
+}
+$('startBtn').addEventListener('click', () => running ? pause() : start());
+function driveHint() {
+  const h = $('driveHint'); h.className = 'driveHint';
+  if (micError) { h.classList.add('err'); h.textContent = 'Mikrofon aus · Tippen zum Starten'; return; }
+  if (!running) { h.textContent = session.right + session.wrong ? 'Pausiert · Tippen zum Weitermachen' : 'Tippen zum Starten'; return; }
+  if (needTap) { h.classList.add('err'); h.textContent = 'Kurz tippen, Mikrofon ist aus'; return; }
+  h.classList.add('live'); h.textContent = speaking ? 'Spricht …' : listening ? 'Hört zu · Tippen = Pause' : 'Mikrofon startet …';
+  $('driveCount').textContent = '✓ ' + session.right + '   ✕ ' + session.wrong;
+}
+function setDrive(on) {
+  document.body.classList.toggle('drive', on); set.drive = on; saveSettings();
+  if (on) { set.speakDe = true; $('optSpeakDe').checked = true; saveSettings(); }
+  driveHint();
+}
+$('driveBtn').onclick = () => setDrive(true);
+$('driveExit').onclick = e => { e.stopPropagation(); setDrive(false); };
+$('card').addEventListener('click', e => {
+  if (!document.body.classList.contains('drive')) return;
+  if (Date.now() - tapConsumedAt < 600) return;
+  running ? pause() : start();
+});
+if (set.drive) setDrive(true);
+/* ---------- Übungsart und Gesprächsmodus ---------- */
+const TALK_BASE = "Let's practice spoken American English. I'm a German native speaker and I'm getting ready to work with American colleagues. My level is intermediate. Rules: Speak natural, casual American English at a normal pace. Keep each of your turns short, one to three sentences, and end with a question so I keep talking. If I make a clear mistake, first say the corrected version very briefly (\"Better: ...\"), then continue the conversation. If I use a German word because I don't know the English one, tell me the English word and continue. Don't explain grammar unless I ask. ";
+const SCEN = [
+  ['drill', 'Vokabel-Drill (Auto)', ''],
+  ['smalltalk', 'Smalltalk mit Kollegen', "Role: You are Mike, an American coworker from Chicago. It's Monday morning and we're chatting by the coffee machine. Start with a casual greeting and ask about my weekend."],
+  ['meeting', 'Meeting', "Role: You are Sarah, a project manager in Austin, running a short project status meeting with me. Ask me for updates, push back politely, and talk about deadlines and next steps. Start the meeting."],
+  ['call', 'Video-Call', "Role: You are Jason, a colleague from our US office, on a video call with me. We need to find a date for a workshop and agree on who prepares what. Start the call."],
+  ['lunch', 'Mittagessen', "Role: You are Emily, a new American colleague. We're having lunch together and getting to know each other: hobbies, family, travel, food. Start the conversation."],
+  ['free', 'Freies Thema', "Role: You are a friendly American conversation partner. Let me choose the topic. Start by asking what I'd like to talk about."]
+];
+function drillList() {
+  const now = Date.now(), pool = VOCAB.filter(v => (v.deck === 'w' || v.deck === 't') && !isBlocked(v.id));
+  const st = id => S.words[id];
+  const learning = pool.filter(v => st(v.id) && st(v.id).learn);
+  const due = pool.filter(v => st(v.id) && !st(v.id).learn && st(v.id).due <= now).sort((a, b) => st(a.id).due - st(b.id).due);
+  const fresh = S.order.map(id => byId.get(id)).filter(v => v && (v.deck === 'w' || v.deck === 't') && !st(v.id) && !isBlocked(v.id));
+  const out = [], seen = new Set();
+  for (const v of [...learning, ...due, ...fresh]) { if (seen.has(v.id)) continue; seen.add(v.id); out.push(v); if (out.length >= 40) break; }
+  return out;
+}
+function drillPrompt() {
+  const list = drillList().map(v => v.de.replace(/\s*\(.+\)/, '') + ' = ' + v.en.slice(0, 3).join(' / ')).join('\n');
+  return "Let's do a fast spoken vocabulary drill in voice mode. I'm German and I'm learning American English. Rules: Say one German word from the list below, then wait for my English answer. If my answer is correct (a synonym also counts), say only \"Right.\" and immediately say the next German word. If it's wrong, or I say \"pass\", say only the correct American English word once, then the next German word. No other comments, no explanations, keep it fast. Words I got wrong come back after three to five other words. Go through the list in random order. When I say \"stop\", tell me which words I missed. Start right away with the first word.\n\nList (German = English):\n" + list;
+}
+function talkPrompt() { if (set.scenario === 'drill') return drillPrompt(); const sc = SCEN.find(x => x[0] === set.scenario) || SCEN[0]; return TALK_BASE + sc[2]; }
+function renderTalk() {
+  $('scen').innerHTML = SCEN.map(x => '<button type="button" role="radio" data-scen="' + x[0] + '" aria-checked="' + (x[0] === set.scenario) + '">' + x[1] + '</button>').join('');
+  const p = talkPrompt(); $('talkPrompt').value = p;
+  $('talkOpen').href = 'https://claude.ai/new?q=' + encodeURIComponent(p);
+}
+$('scen').addEventListener('click', e => { const b = e.target.closest('[data-scen]'); if (!b) return; set.scenario = b.dataset.scen; saveSettings(); renderTalk(); });
+$('talkCopy').onclick = () => {
+  const p = talkPrompt(), btn = $('talkCopy');
+  const done = () => { btn.textContent = 'Kopiert'; setTimeout(() => btn.textContent = 'Anweisung kopieren', 2000); };
+  try { navigator.clipboard.writeText(p).then(done, () => { $('talkPrompt').closest('details').open = true; $('talkPrompt').select(); }); }
+  catch (e) { $('talkPrompt').closest('details').open = true; $('talkPrompt').select(); }
+};
+function setMode(m) {
+  if (running) pause();
+  set.mode = m; saveSettings();
+  document.body.classList.toggle('mode-c', m === 'c');
+  $('talk').hidden = m !== 'c';
+  document.querySelectorAll('.tabs [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+  lastId = null; cur = null; phase = 'idle';
+  $('card').className = 'card'; $('fb').innerHTML = ''; $('blockBtn').hidden = true;
+  $('word').textContent = 'Bereit';
+  $('word').classList.remove('long');
+  showHeard(m === 'p' ? 'Drück auf Start und sag den Satz auf Englisch.' : 'Drück auf Start und sag das englische Wort.', false);
+  $('tag').textContent = '';
+  $('startBtn').textContent = 'Start';
+  session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
+  updateStats();
+}
+document.querySelectorAll('.tabs [data-mode]').forEach(b => b.onclick = () => { setMode(b.dataset.mode); if (b.dataset.mode === 'c') renderTalk(); });
+$('talkOpen').addEventListener('click', () => { $('talkOpen').href = 'https://claude.ai/new?q=' + encodeURIComponent(talkPrompt()); });
+renderTalk(); setMode(set.mode || 'w');
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { running ? pause() : null; }
+  else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? pause() : start(); }
+});
+// Diktat über die iPhone-Tastatur: richtige Antworten sofort erkennen, ohne Enter
+$('typed').addEventListener('input', () => {
+  const v = $('typed').value.trim();
+  if (!v || !running || phase !== 'answer' || !cur) return;
+  if (isRight(v, cur)) { $('typed').value = ''; accept(true, v); }
+  else armSilence();
+});
+$('typeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('typed').value.trim(); $('typed').value = '';
+  if (!running) {
+    running = true; session.since = Date.now(); $('startBtn').textContent = 'Pause'; setMic(); next();
+    return;
+  }
+  if (phase !== 'answer') return;
+  if (!v || isPass(v)) return accept(false, '');
+  accept(isRight(v, cur), v);
+});
+$('blockBtn').onclick = e => { e.stopPropagation(); try { synth && synth.cancel(); } catch (x) {} blockByVoice(); };
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-block]'); if (b) { blockWord(b.dataset.block); return; }
+  const u = e.target.closest('[data-unblock]'); if (u) unblockWord(u.dataset.unblock);
+});
+$('micTest').onclick = () => {
+  if (running) pause();
+  const out = $('micTestOut');
+  if (!SR) { out.textContent = 'Keine Spracherkennung in diesem Browser.'; return; }
+  try { synth && synth.cancel(); } catch (e) {}
+  const t = new SR(); t.lang = 'en-US'; t.interimResults = true; t.continuous = false;
+  dlog('Test: ' + navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 90));
+  t.onstart = () => { out.textContent = 'Hört zu … sag „hello“'; dlog('Test gestartet'); };
+  t.onaudiostart = () => dlog('Test: Audio an');
+  t.onspeechstart = () => dlog('Test: Sprache erkannt');
+  t.onresult = e => { const x = e.results[e.results.length - 1][0].transcript; out.textContent = 'Gehört: ' + x; dlog('Test-Ergebnis: ' + x); };
+  t.onerror = e => { out.textContent = 'Fehler: ' + e.error; dlog('Test-Fehler: ' + e.error); };
+  t.onend = () => { dlog('Test beendet'); if (/Hört zu/.test(out.textContent)) out.textContent = 'Nichts gehört.'; };
+  try { t.start(); } catch (e) { out.textContent = 'Start fehlgeschlagen: ' + e.message; dlog('Test-Startfehler: ' + e.message); }
+};
+$('resetBtn').onclick = () => { $('resetConfirm').hidden = false; };
+$('resetNo').onclick = () => { $('resetConfirm').hidden = true; };
+$('resetYes').onclick = () => {
+  pause(); S.words = {}; S.counter = 0; S.order = []; S.blocked = []; fixOrder(); renderBlocked(); save(); session = { right: 0, wrong: 0, activeMs: 0, since: 0 }; recentWrong.length = 0; renderRecent(); $('resetConfirm').hidden = true; $('startBtn').textContent = 'Start'; updateStats();
+};
+setInterval(() => { if (running) updateStats(); }, 5000);
+renderBlocked(); updateStats(); setMic();
+</script>
+</body></html>
