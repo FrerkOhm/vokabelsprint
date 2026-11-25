@@ -1464,7 +1464,19 @@ function micOff() {
 }
 function micOn() {
   if (!micOffForSpeech) return; micOffForSpeech = false;
-  if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} }
+  setTimeout(() => tryStart(0), 120);
+}
+// Start mit Kontrolle: iOS startet die Erkennung nach dem Vorlesen manchmal stumm nicht. Dann erneut versuchen.
+function tryStart(attempt) {
+  if (!rec || !wantListen || !running || needTap || speaking || micOffForSpeech || listening) return;
+  try { rec.start(); dlog('Erkennung neu (Versuch ' + (attempt + 1) + ')'); } catch (x) { dlog('Start-Fehler: ' + x.name); }
+  setTimeout(() => {
+    if (!listening && rec && wantListen && running && !needTap && !speaking && !micOffForSpeech && attempt < 3) {
+      dlog('Erkennung kam nicht in Gang, neuer Versuch');
+      try { rec.abort(); } catch (x) {}
+      setTimeout(() => tryStart(attempt + 1), 250);
+    }
+  }, 1500);
 }
 function say(text, lang, hold) {
   return new Promise(res => {
@@ -1670,7 +1682,7 @@ function armSilence() {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
     // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
-    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
+    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); if (listening) { try { rec.abort(); } catch (x) {} } else tryStart(0); } }
     accept(false, '');
   }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
