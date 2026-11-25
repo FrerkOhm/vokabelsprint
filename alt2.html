@@ -1,0 +1,1355 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Vokabelsprint Englisch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column, the flashcard is the hero; controls and stats sit below it like a dashboard strip. */
+:root{
+  --bg:#eef2f8; --surface:#ffffff; --ink:#14213d; --muted:#5a6680; --line:#d9e0ec;
+  --accent:#2f55e4; --accent-ink:#ffffff; --ok:#16935b; --ok-soft:#dff5ea; --bad:#cf3f33; --bad-soft:#fde5e2;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1321; --surface:#151d2f; --ink:#e7ecf6; --muted:#97a3bb; --line:#26314a;
+  --accent:#7090ff; --accent-ink:#0d1321; --ok:#3fd08e; --ok-soft:#123327; --bad:#ff7063; --bad-soft:#3a1a18; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1321; --surface:#151d2f; --ink:#e7ecf6; --muted:#97a3bb; --line:#26314a;
+  --accent:#7090ff; --accent-ink:#0d1321; --ok:#3fd08e; --ok-soft:#123327; --bad:#ff7063; --bad-soft:#3a1a18; color-scheme:dark }
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:-.01em;margin:0}
+.engine{font-size:.8rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 22px 22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;transition:box-shadow .15s}
+.card.ok{box-shadow:0 0 0 3px var(--ok) inset}
+.card.bad{box-shadow:0 0 0 3px var(--bad) inset}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.word{font-family:var(--display);font-weight:700;font-size:clamp(2rem,9vw,3.2rem);line-height:1.05;letter-spacing:-.02em;text-wrap:balance;min-height:1.1em;overflow-wrap:anywhere}
+.word .art{font-weight:500;color:var(--muted);font-size:.55em;letter-spacing:0;margin-right:.3em}
+.heard{min-height:1.5em;color:var(--muted);font-size:.95rem;overflow-wrap:anywhere}
+.heard b{color:var(--ink);font-weight:500}
+.heard.partial b{opacity:.6}
+.fb{min-height:2.6em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fb .sol{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:6px 12px;font-weight:600;font-size:1.15rem}
+.fb .alt{color:var(--muted);font-size:.85rem}
+.fb .okmark{color:var(--ok);font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 14px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600;font-size:1.05rem;padding:14px 22px;flex:1 1 180px}
+.mic{display:flex;align-items:center;gap:8px;font-size:.88rem;color:var(--muted);flex:1 1 140px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--line);flex:none}
+.dot.on{background:var(--ok);animation:pulse 1.4s ease-in-out infinite}
+.dot.talk{background:var(--accent)}
+.dot.err{background:var(--bad)}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.dot.on{animation:none}}
+form{display:flex;gap:8px}
+input[type=text]{flex:1;min-width:0;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stat{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .n{font-family:var(--display);font-weight:700;font-size:1.35rem;font-variant-numeric:tabular-nums}
+.stat .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat .n.ok{color:var(--ok)} .stat .n.bad{color:var(--bad)}
+.recent{display:flex;flex-wrap:wrap;gap:6px;font-size:.85rem}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.chip i{font-style:normal;color:var(--muted)}
+.chip .x{border:0;background:none;padding:0 2px;color:var(--muted);font-size:.9em;line-height:1}
+.chip .x:hover{color:var(--bad)}
+.ghost{align-self:flex-start;border:0;background:none;color:var(--muted);padding:2px 0;font-size:.85rem;text-decoration:underline;text-underline-offset:3px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+summary{cursor:pointer;font-weight:600}
+details > div{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+label.opt{display:flex;gap:10px;align-items:center}
+select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+.muted{color:var(--muted);font-size:.88rem}
+.danger{color:var(--bad);border-color:var(--bad)}
+.notice{background:var(--bad-soft);color:var(--ink);border-radius:12px;padding:10px 14px;font-size:.9rem}
+ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+[hidden]{display:none!important}
+kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px;font-size:.85em}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Vokabelsprint</h1>
+    <span class="engine" id="engine">Seite startet nicht? Dann bitte über einen Webbrowser mit https-Adresse öffnen.</span>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <section class="card" id="card" aria-live="polite">
+    <div class="label"><span>Deutsch → Englisch</span><span id="tag"></span></div>
+    <div class="word" id="word"><span class="art">z.&nbsp;B.</span>Schlüssel</div>
+    <div class="heard" id="heard">Drück auf Start und sag das englische Wort.</div>
+    <div class="fb" id="fb"></div>
+    <button type="button" class="ghost" id="blockBtn" hidden>Dieses Wort ausblenden</button>
+  </section>
+
+  <div class="row">
+    <button class="primary" id="startBtn" type="button">Start</button>
+    <div class="mic"><span class="dot" id="dot"></span><span id="micText">Bereit</span></div>
+  </div>
+
+  <form id="typeForm" autocomplete="off">
+    <input type="text" id="typed" placeholder="Oder Antwort tippen, Enter" aria-label="Antwort tippen" autocapitalize="off" spellcheck="false">
+    <button type="submit">OK</button>
+  </form>
+
+  <div class="stats" aria-label="Statistik">
+    <div class="stat"><span class="n ok" id="sRight">0</span><span class="k">Richtig</span></div>
+    <div class="stat"><span class="n bad" id="sWrong">0</span><span class="k">Falsch</span></div>
+    <div class="stat"><span class="n" id="sWpm">–</span><span class="k">Wörter/Min</span></div>
+    <div class="stat"><span class="n" id="sKnown">0</span><span class="k">Sitzen</span></div>
+    <div class="stat"><span class="n" id="sLearn">0</span><span class="k">Im Training</span></div>
+    <div class="stat"><span class="n" id="sNew">0</span><span class="k">Noch neu</span></div>
+  </div>
+
+  <div id="recentWrap" hidden>
+    <div class="label" style="margin-bottom:6px"><span>Zuletzt falsch</span></div>
+    <div class="recent" id="recent"></div>
+  </div>
+
+  <details>
+    <summary>Ausgeblendete Wörter (<span id="blockedCount">0</span>)</summary>
+    <div>
+      <p class="muted">Diese Wörter werden nicht mehr abgefragt. Mit ↺ holst du eins zurück.</p>
+      <div class="recent" id="blockedList"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Einstellungen</summary>
+    <div>
+      <label class="opt"><input type="checkbox" id="optSpeakDe" checked> Deutsches Wort vorlesen (für Training ohne Hinschauen)</label>
+      <label class="opt"><input type="checkbox" id="optBeep" checked> Kurzer Ton bei richtiger Antwort</label>
+      <label class="opt" style="flex-wrap:wrap">Lösung automatisch sagen nach <select id="optWait"><option value="4">4 Sekunden</option><option value="7">7 Sekunden</option><option value="10">10 Sekunden</option><option value="15">15 Sekunden</option><option value="0">nie</option></select></label>
+      <label class="opt" style="flex-wrap:wrap">Englische Stimme <select id="voiceEn"></select></label>
+      <label class="opt" style="flex-wrap:wrap">Deutsche Stimme <select id="voiceDe"></select></label>
+      <div class="row">
+        <button type="button" class="danger" id="resetBtn">Fortschritt zurücksetzen</button>
+        <span id="resetConfirm" hidden class="row"><span class="muted">Wirklich alles löschen?</span>
+          <button type="button" class="danger" id="resetYes">Ja, löschen</button>
+          <button type="button" id="resetNo">Abbrechen</button></span>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>So funktioniert's</summary>
+    <div>
+      <ol>
+        <li>Auf <b>Start</b> drücken und das Mikrofon erlauben.</li>
+        <li>Das deutsche Wort erscheint (und wird vorgelesen). Sag einfach das englische Wort, z.&nbsp;B. „key“. Bei Verben geht „go“ oder „to go“.</li>
+        <li><b>Richtig:</b> kurzer Ton, sofort das nächste Wort. <b>Falsch:</b> die richtige Antwort wird vorgesagt, danach geht es weiter.</li>
+        <li>Weißt du es nicht, sag „pass“, „help“ oder „skip“. Oder sag einfach nichts: nach 7 Sekunden kommt die Lösung von selbst (einstellbar).</li>
+        <li>Freihändig, z.&nbsp;B. im Auto: „Deutsches Wort vorlesen“ anlassen, Handy per Bluetooth/CarPlay verbinden, Start drücken. Der Bildschirm bleibt an, bitte die Seite offen lassen.</li>
+        <li>Ein Wort wird nie erkannt? Sag „delete“ (gleich nachdem die Lösung kam) oder tippe auf „Dieses Wort ausblenden“ bzw. das ✕ unter „Zuletzt falsch“. Es kommt dann nicht mehr dran.</li>
+        <li>Die Antwortzeit zählt mit: Brauchst du länger als 3 Sekunden, kommt das Wort früher wieder. Ab 6 Sekunden wird es wie ein falsches Wort geübt.</li>
+        <li>Falsche Wörter kommen nach wenigen Karten wieder, bis sie sitzen. Wörter, die du gleich konntest, kommen erst nach Tagen wieder.</li>
+      </ol>
+      <p class="muted">Tipp: Mit Kopfhörern hört das Mikrofon die Sprachausgabe nicht mit. <kbd>Esc</kbd> pausiert. Der Fortschritt wird in diesem Browser gespeichert.</p>
+      <p class="muted" id="countInfo"></p>
+    </div>
+  </details>
+</div>
+
+<script>
+/* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
+const VOCAB_RAW = `
+der Mann|man;husband
+die Frau|woman;wife
+das Kind|child;kid
+der Junge|boy
+das Mädchen|girl
+der Freund|friend;boyfriend
+die Familie|family
+die Mutter|mother;mom;mum
+der Vater|father;dad
+der Bruder|brother
+die Schwester|sister
+der Sohn|son
+die Tochter|daughter
+die Eltern|parents
+die Großmutter|grandmother;grandma;granny
+der Großvater|grandfather;grandpa
+der Nachbar|neighbor
+das Baby|baby
+der Mensch|person;human;human being
+die Leute|people
+das Haus|house;home
+die Wohnung|apartment;flat
+das Zimmer|room
+die Küche|kitchen;cuisine
+das Badezimmer|bathroom
+das Schlafzimmer|bedroom
+die Tür|door
+das Fenster|window
+der Tisch|table;desk
+der Stuhl|chair
+das Bett|bed
+der Schrank|cupboard;wardrobe;closet;cabinet
+das Sofa|sofa;couch
+die Lampe|lamp
+der Schlüssel|key
+die Treppe|stairs;staircase
+der Fußboden|floor
+die Wand|wall
+das Dach|roof
+der Garten|garden;yard
+der Spiegel|mirror
+das Kissen|pillow;cushion
+die Decke|blanket;ceiling
+der Kühlschrank|fridge;refrigerator
+der Ofen|oven;stove
+die Dusche|shower
+das Handtuch|towel
+die Seife|soap
+das Essen|food;meal
+das Wasser|water
+das Brot|bread
+die Butter|butter
+der Käse|cheese
+die Milch|milk
+das Ei|egg
+das Fleisch|meat
+der Fisch|fish
+das Huhn|chicken;hen
+der Apfel|apple
+die Birne|pear;light bulb;bulb
+die Banane|banana
+die Orange|orange
+die Erdbeere|strawberry
+die Kartoffel|potato
+die Tomate|tomato
+die Zwiebel|onion
+die Karotte|carrot
+das Gemüse|vegetables;vegetable;veggies
+das Obst|fruit
+der Reis|rice
+die Nudeln|noodles;pasta
+die Suppe|soup
+der Salat|salad;lettuce
+der Zucker|sugar
+das Salz|salt
+der Pfeffer|pepper
+der Kaffee|coffee
+der Tee|tea
+der Saft|juice
+das Bier|beer
+der Wein|wine
+der Kuchen|cake
+das Frühstück|breakfast
+das Mittagessen|lunch
+das Abendessen|dinner;supper
+der Teller|plate
+die Tasse|cup;mug
+das Glas|glass;jar
+die Gabel|fork
+das Messer|knife
+der Löffel|spoon
+die Flasche|bottle
+die Rechnung|bill;check;invoice
+das Trinkgeld|tip
+die Speisekarte|menu
+der Kopf|head
+das Gesicht|face
+das Auge|eye
+das Ohr|ear
+die Nase|nose
+der Mund|mouth
+der Zahn|tooth
+das Haar|hair
+der Hals|neck;throat
+die Schulter|shoulder
+der Arm|arm
+die Hand|hand
+der Finger|finger
+das Bein|leg
+das Knie|knee
+der Fuß|foot
+der Rücken|back
+der Bauch|belly;stomach;tummy
+das Herz|heart
+die Haut|skin
+das Blut|blood
+die Kleidung|clothes;clothing
+das Hemd|shirt
+die Hose|trousers;pants
+der Rock|skirt
+das Kleid|dress
+die Jacke|jacket
+der Mantel|coat
+der Schuh|shoe;shoes
+die Socke|sock;socks
+der Hut|hat
+der Handschuh|glove;gloves
+der Gürtel|belt
+die Tasche|bag;pocket
+die Brille|glasses;spectacles
+die Uhr|watch;clock
+die Stadt|city;town
+das Dorf|village
+die Straße|street;road
+der Weg|way;path
+die Brücke|bridge
+der Bahnhof|train station;station;railway station
+der Flughafen|airport
+der Zug|train
+das Auto|car
+das Fahrrad|bike;bicycle
+das Flugzeug|plane;airplane;aeroplane
+das Schiff|ship
+das Boot|boat
+die Fahrkarte|ticket
+der Koffer|suitcase
+die Reise|trip;journey;travel
+der Urlaub|vacation;holiday;holidays
+die Kirche|church
+die Schule|school
+das Krankenhaus|hospital
+die Apotheke|pharmacy;drugstore;chemist
+die Bank|bank;bench
+die Post|post office;mail;post
+der Laden|shop;store
+der Markt|market
+die Ecke|corner
+die Ampel|traffic light;traffic lights
+die Landkarte|map
+das Geld|money
+der Preis|price;prize
+die Arbeit|work;job
+das Büro|office
+der Arzt|doctor;physician
+die Polizei|police
+die Sonne|sun
+der Mond|moon
+der Stern|star
+der Himmel|sky;heaven
+die Wolke|cloud
+der Regen|rain
+der Schnee|snow
+der Wind|wind
+das Wetter|weather
+der Baum|tree
+die Blume|flower
+das Gras|grass
+der Wald|forest;woods
+der Berg|mountain
+der Fluss|river
+der See|lake
+das Meer|sea;ocean
+der Strand|beach
+die Insel|island
+der Stein|stone;rock
+das Feuer|fire
+die Luft|air
+die Erde|earth;soil;ground
+das Tier|animal
+der Hund|dog
+die Katze|cat
+das Pferd|horse
+die Kuh|cow
+das Schwein|pig
+das Schaf|sheep
+der Vogel|bird
+die Maus|mouse
+der Bär|bear
+die Biene|bee
+die Spinne|spider
+die Zeit|time
+der Tag|day
+die Nacht|night
+der Morgen|morning
+der Abend|evening
+die Woche|week
+der Monat|month
+das Jahr|year
+die Stunde|hour;lesson
+die Minute|minute
+heute|today
+morgen|tomorrow
+gestern|yesterday
+jetzt|now
+später|later
+früh|early
+spät|late
+immer|always
+nie|never
+oft|often;frequently
+manchmal|sometimes
+bald|soon
+schon|already
+wieder|again
+der Montag|monday
+der Dienstag|tuesday
+der Mittwoch|wednesday
+der Donnerstag|thursday
+der Freitag|friday
+der Samstag|saturday
+der Sonntag|sunday
+der Sommer|summer
+der Winter|winter
+der Frühling|spring
+der Herbst|autumn;fall
+der Geburtstag|birthday
+gehen|go;walk
+kommen|come
+sehen|see
+hören|hear;listen
+sprechen|speak;talk
+sagen|say;tell
+essen|eat
+trinken|drink
+schlafen|sleep
+arbeiten|work
+spielen|play
+lesen|read
+schreiben|write
+kaufen|buy
+verkaufen|sell
+bezahlen|pay
+geben|give
+nehmen|take
+bringen|bring
+finden|find
+suchen|search;look for;seek
+wissen|know
+denken|think
+glauben|believe;think
+verstehen|understand
+lernen|learn;study
+helfen|help
+fragen|ask
+antworten|answer;reply
+warten|wait
+laufen|run;walk
+fahren|drive;ride;go
+fliegen|fly
+schwimmen|swim
+sitzen|sit
+stehen|stand
+liegen|lie;lie down;be lying
+öffnen|open
+schließen|close;shut
+beginnen|begin;start
+aufhören|stop;quit
+machen|make;do
+brauchen|need
+wollen|want
+mögen|like
+lieben|love
+hassen|hate
+wohnen|live
+sterben|die
+kochen|cook;boil
+waschen|wash
+putzen|clean
+tragen|carry;wear
+ziehen|pull
+drücken|push;press;squeeze
+werfen|throw
+fangen|catch
+fallen|fall
+vergessen|forget
+sich erinnern|remember;recall
+zeigen|show;point
+versuchen|try;attempt
+gewinnen|win
+verlieren|lose
+lachen|laugh
+weinen|cry;weep
+singen|sing
+tanzen|dance
+treffen|meet;hit
+besuchen|visit
+reisen|travel
+anrufen|call;phone;ring
+schicken|send
+benutzen|use
+ändern|change
+wählen|choose;vote;dial;pick
+reparieren|repair;fix
+bauen|build
+schneiden|cut
+füllen|fill
+leihen|borrow;lend
+mieten|rent
+teilen|share;divide
+zählen|count
+fühlen|feel
+riechen|smell
+schmecken|taste
+berühren|touch
+lächeln|smile
+erklären|explain
+entscheiden|decide
+erlauben|allow;permit;let
+vermissen|miss
+hoffen|hope
+sich beeilen|hurry;hurry up
+aufwachen|wake up;wake
+aufstehen|get up;stand up
+sich ausruhen|rest;relax
+heiraten|marry;get married
+wachsen|grow
+verdienen|earn;deserve
+sparen|save
+ausgeben|spend
+groß|big;tall;large;great
+klein|small;little
+gut|good;well
+schlecht|bad
+neu|new
+alt|old
+jung|young
+schön|beautiful;nice;pretty;lovely
+hässlich|ugly
+lang|long
+kurz|short;brief
+hoch|high;tall
+tief|deep;low
+schnell|fast;quick;quickly
+langsam|slow;slowly
+warm|warm
+kalt|cold
+heiß|hot
+kühl|cool
+nass|wet
+trocken|dry
+voll|full
+leer|empty
+schwer|heavy;difficult;hard
+leicht|easy;light
+einfach|easy;simple
+schwierig|difficult;hard;tricky
+billig|cheap
+teuer|expensive
+reich|rich;wealthy
+arm|poor
+glücklich|happy;lucky
+traurig|sad
+müde|tired;sleepy
+hungrig|hungry
+durstig|thirsty
+krank|sick;ill
+gesund|healthy
+stark|strong
+schwach|weak
+laut|loud;noisy
+leise|quiet;silent;soft;softly
+hell|bright;light
+dunkel|dark
+sauber|clean
+schmutzig|dirty
+richtig|right;correct
+falsch|wrong;false
+wichtig|important
+interessant|interesting
+langweilig|boring
+lustig|funny
+freundlich|friendly;kind
+böse|evil;bad;angry;mean
+wütend|angry;furious;mad
+ruhig|quiet;calm
+gefährlich|dangerous
+sicher|safe;sure;secure
+frei|free
+besetzt|occupied;busy;taken;engaged
+offen|open
+geschlossen|closed;shut
+fertig|ready;finished;done
+dick|thick;fat
+dünn|thin
+weich|soft
+hart|hard
+süß|sweet;cute
+sauer|sour;angry;upset;mad
+scharf|spicy;sharp;hot
+frisch|fresh
+nah|near;close
+weit|far;wide
+links|left;on the left
+rechts|right;on the right
+oben|up;upstairs;above;at the top
+unten|down;downstairs;below;at the bottom
+rot|red
+blau|blue
+grün|green
+gelb|yellow
+schwarz|black
+weiß|white
+grau|gray
+braun|brown
+rosa|pink
+lila|purple;lilac;violet
+ja|yes
+nein|no
+bitte|please;you're welcome
+danke|thank you;thanks
+Entschuldigung|sorry;excuse me;pardon
+hallo|hello;hi;hey
+tschüss|bye;goodbye;see you
+vielleicht|maybe;perhaps
+viel|much;a lot;lots
+wenig|little;few;not much
+alles|everything;all
+nichts|nothing
+etwas|something;some;a little
+jemand|someone;somebody
+niemand|nobody;no one
+hier|here
+dort|there
+überall|everywhere
+warum|why
+wann|when
+wo|where
+wer|who
+was|what
+wie|how
+welcher|which
+aber|but
+und|and
+oder|or
+weil|because
+mit|with
+ohne|without
+für|for
+gegen|against
+zwischen|between
+neben|next to;beside
+hinter|behind
+unter|under;below;beneath
+über|over;above;about
+sehr|very
+genug|enough
+zusammen|together
+allein|alone
+fast|almost;nearly
+nur|only;just
+auch|also;too;as well
+das Buch|book
+die Zeitung|newspaper;paper
+der Brief|letter
+das Papier|paper
+der Stift|pen;pencil
+das Handy|cell phone;mobile phone;phone;mobile;smartphone
+der Fernseher|television;tv;tv set
+das Bild|picture;image;painting
+das Foto|photo;photograph;picture
+die Musik|music
+das Lied|song
+der Film|movie;film
+das Spiel|game;match
+der Ball|ball
+das Geschenk|present;gift
+die Kerze|candle
+die Schere|scissors
+der Regenschirm|umbrella
+die Zahnbürste|toothbrush
+das Werkzeug|tool;tools
+der Hammer|hammer
+der Nagel|nail
+das Licht|light
+die Frage|question
+die Antwort|answer;reply
+das Wort|word
+die Sprache|language;speech
+der Name|name
+die Nummer|number
+die Farbe|color;paint
+die Idee|idea
+das Problem|problem;issue
+der Fehler|mistake;error;fault
+die Hilfe|help
+die Liebe|love
+das Glück|luck;happiness
+die Angst|fear;anxiety
+der Spaß|fun
+der Traum|dream
+die Geschichte|story;history
+das Leben|life
+die Welt|world
+das Land|country;land
+die Grenze|border;limit
+der Gast|guest
+der Kunde|customer;client
+der Chef|boss
+der Kollege|colleague;coworker
+der Lehrer|teacher
+der Schüler|student;pupil
+der Kellner|waiter
+der Fahrer|driver
+die Krankenschwester|nurse
+der Termin|appointment;date
+die Besprechung|meeting
+die Hochzeit|wedding
+das Wochenende|weekend
+der Feiertag|holiday;public holiday;bank holiday
+die Erkältung|cold
+das Fieber|fever;temperature
+der Schmerz|pain;ache
+die Medizin|medicine
+die Tablette|pill;tablet
+notwendig|necessary;needed
+berücksichtigen|consider;take into account
+vorschlagen|suggest;propose
+gemäß|according to;in accordance with
+außerdem|also;besides;moreover;furthermore;in addition
+deshalb|therefore;that's why;so
+trotzdem|nevertheless;anyway;still;even so
+obwohl|although;even though;though
+jedoch|however
+stattdessen|instead
+sondern|but;rather
+während|while;during
+nachdem|after
+bevor|before
+seit|since;for
+bis|until;till;by
+falls|in case;if
+ob|whether;if
+als ob|as if;as though
+eigentlich|actually
+tatsächlich|actually;indeed;really;in fact
+wahrscheinlich|probably;likely
+möglicherweise|possibly;maybe;perhaps
+sicherlich|certainly;surely
+natürlich|of course;naturally
+offensichtlich|obviously;apparently
+besonders|especially;particularly
+mindestens|at least
+höchstens|at most
+ungefähr|about;approximately;around;roughly
+ziemlich|quite;pretty;fairly;rather
+völlig|completely;totally;entirely
+kaum|hardly;barely;scarcely
+sofort|immediately;right away;at once
+endlich|finally;at last
+schließlich|eventually;finally;after all
+zuerst|first;at first;first of all
+danach|afterwards;after that;then
+inzwischen|meanwhile;in the meantime;by now
+zum Beispiel|for example;for instance
+im Allgemeinen|in general;generally
+übrigens|by the way
+sowieso|anyway;anyhow
+irgendwie|somehow
+also|so;well;therefore
+dennoch|nevertheless;yet;still
+daher|therefore;hence;that's why
+außer|except;apart from;besides
+anstatt|instead of
+trotz|despite;in spite of
+wegen|because of;due to
+durch|through;by
+innerhalb|within;inside
+außerhalb|outside
+ähnlich|similar;alike
+verschieden|different;various
+gleich|same;equal;right away
+eigen|own
+gewöhnlich|usual;ordinary;usually
+üblich|usual;common;customary
+möglich|possible
+unmöglich|impossible
+wahr|true
+klar|clear;of course
+genau|exactly;exact;precise
+ganz|whole;entire;quite;completely
+bestimmt|certainly;definitely;certain
+erforderlich|required;necessary
+verfügbar|available
+zuverlässig|reliable
+bequem|comfortable;convenient
+angenehm|pleasant;comfortable
+geeignet|suitable;appropriate
+zufrieden|satisfied;content;happy
+überrascht|surprised
+besorgt|worried;concerned
+annehmen|assume;accept;suppose
+vermeiden|avoid
+erwarten|expect
+erreichen|reach;achieve
+schaffen|manage;create;make it
+anbieten|offer
+bereitstellen|provide
+enthalten|contain;include
+abhängen|depend
+bedeuten|mean
+beschreiben|describe
+vergleichen|compare
+verbessern|improve
+erhöhen|increase;raise
+reduzieren|reduce;decrease
+unterstützen|support
+überzeugen|convince;persuade
+bestätigen|confirm
+empfehlen|recommend
+behaupten|claim;assert
+erwähnen|mention
+betonen|emphasize;stress
+zustimmen|agree
+widersprechen|disagree;contradict
+sich beschweren|complain
+sich weigern|refuse
+verhindern|prevent
+ermöglichen|enable;allow;make possible
+ermutigen|encourage
+beeinflussen|influence;affect
+bemerken|notice;remark
+erkennen|recognize;realize
+sich vorstellen|imagine;introduce
+sich konzentrieren|concentrate;focus
+sich kümmern|take care;care;look after
+sich gewöhnen|get used to
+sich verlassen|rely;depend;count on
+sich lohnen|be worth it;pay off;worth it
+gehören|belong
+passieren|happen;occur
+scheinen|seem;appear;shine
+bleiben|stay;remain
+werden|become;get;will
+erhalten|receive;get;obtain
+liefern|deliver;supply
+verlangen|demand;require;ask for
+erfordern|require;demand
+behandeln|treat;handle;deal with
+lösen|solve;resolve
+verursachen|cause
+fortsetzen|continue
+beenden|finish;end;complete
+vorbereiten|prepare
+organisieren|organize
+planen|plan
+überprüfen|check;verify;review
+bewerten|evaluate;assess;rate
+beweisen|prove
+entwickeln|develop
+verwenden|use
+gelingen|succeed;manage
+scheitern|fail
+sich entschuldigen|apologize
+danken|thank
+bitten|ask;request;beg
+einladen|invite
+ablehnen|refuse;reject;decline
+akzeptieren|accept
+verschieben|postpone;move;delay
+absagen|cancel
+der Grund|reason
+die Ursache|cause
+die Folge|consequence;result
+das Ergebnis|result;outcome
+der Vorteil|advantage;benefit
+der Nachteil|disadvantage;drawback
+die Möglichkeit|possibility;opportunity;option
+die Gelegenheit|opportunity;occasion;chance
+die Entscheidung|decision
+die Meinung|opinion;view
+der Vorschlag|suggestion;proposal
+die Erfahrung|experience
+das Wissen|knowledge
+die Absicht|intention;intent
+der Zweck|purpose
+das Ziel|goal;target;aim;destination
+die Lösung|solution
+die Aufgabe|task;job;assignment
+der Unterschied|difference
+die Bedingung|condition
+die Voraussetzung|requirement;prerequisite
+der Zusammenhang|context;connection
+die Beziehung|relationship;relation
+die Gesellschaft|society;company
+die Regierung|government
+die Wirtschaft|economy
+die Umwelt|environment
+die Gesundheit|health
+die Sicherheit|safety;security
+die Verantwortung|responsibility
+der Erfolg|success
+die Mühe|effort;trouble
+der Zustand|condition;state
+der Eindruck|impression
+die Aussage|statement
+die Bedeutung|meaning;importance;significance
+`;
+const VOCAB = [];
+const byId = new Map();
+for (const line of VOCAB_RAW.trim().split('\n')) {
+  const [de, en] = line.split('|');
+  if (!de || !en || byId.has(de.trim())) continue;
+  const item = { id: de.trim(), de: de.trim(), en: en.split(';').map(s => s.trim()).filter(Boolean) };
+  VOCAB.push(item); byId.set(item.id, item);
+}
+
+/* ---------- Antwortvergleich ---------- */
+const HOMO = [['to','too','two','2'],['no','know'],['right','write'],['see','sea'],['son','sun'],['meet','meat'],['night','knight'],['our','hour'],['flower','flour'],['week','weak'],['read','red'],['buy','by','bye'],['hear','here'],['pear','pair'],['new','knew'],['whole','hole'],['die','dye'],['weather','whether'],['wait','weight'],['ate','eight','8'],['for','four','4'],['won','one','1'],['cell','sell'],['dear','deer'],['wear','where'],['blue','blew'],['hi','high'],['gray','grey'],['neighbor','neighbour'],['color','colour'],['mom','mum'],['tv','tee vee'],['steal','steel'],['sale','sail'],['plane','plain'],['made','maid'],['mail','male'],['bored','board'],['tea','tee'],['bee','be','b'],['eye','i','aye'],['ok','okay'],['pharmacy','farmacy']];
+const CANON = new Map();
+for (const g of HOMO) for (const w of g) CANON.set(w, g[0]);
+function tokens(s) {
+  return s.toLowerCase().replace(/[’`´]/g, "'").replace(/[^a-z0-9' ]+/g, ' ')
+    .split(/\s+/).filter(Boolean).map(t => t.replace(/^'+|'+$/g, '')).filter(Boolean)
+    .map(t => CANON.get(t) || t);
+}
+const ART = new Set(['a', 'an', 'the', 'to']);
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i), cur = new Array(n + 1);
+  for (let i = 1; i <= m; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+function stem(w) { return w.length > 4 ? w.replace(/(ing|ed|es|s)$/, '') : w; }
+function matches(text, answers) {
+  const t = tokens(text); if (!t.length) return false;
+  for (const ans of answers) {
+    let a = tokens(ans);
+    while (a.length > 1 && ART.has(a[0])) a = a.slice(1);
+    if (!a.length) continue;
+    const target = a.join(''); const tol = target.length >= 10 ? 2 : target.length >= 7 ? 1 : 0;
+    for (let size = Math.max(1, a.length - 1); size <= a.length + 1; size++) {
+      for (let i = 0; i + size <= t.length; i++) {
+        const w = t.slice(i, i + size).join('');
+        if (w === target || stem(w) === stem(target) || (tol && Math.abs(w.length - target.length) <= tol && lev(w, target) <= tol)) return true;
+      }
+    }
+  }
+  return false;
+}
+const PASS = ["pass", "skip", "next", "help", "help me", "tell me", "solution", "answer", "i don't know", "don't know", "dont know", "no idea", "no clue", "nicht", "weiss nicht", "vice nicht", "keine ahnung"];
+const PASS_WORDS = new Set(["pass", "skip", "help", "solution"]);
+const BLOCK_CMD = ["delete", "remove", "block", "delete word", "remove word", "delete this", "delete that", "remove that", "delete it", "remove it"];
+function isBlockCmd(text) { const n = tokens(text).join(' '); return BLOCK_CMD.some(p => n === p); }
+function isPass(text) { const t = tokens(text); const n = t.join(' '); return PASS.some(p => n === tokens(p).join(' ')) || (t.length <= 3 && t.some(w => PASS_WORDS.has(w))); }
+const FILLER = new Set(['uh', 'um', 'uhm', 'hmm', 'hm', 'er', 'erm', 'ah', 'eh', 'ahm', 'mm', 'oh', 'well', 'so', 'okay', 'ok']);
+function isFiller(text) { const t = tokens(text); return !t.length || t.every(w => FILLER.has(w)); }
+
+/* ---------- Speicher und Wiederholungsplan ---------- */
+const KEY = 'vokabelsprint.v1';
+const MIN = 60e3, DAY = 864e5;
+const IVL = [0, 10 * MIN, DAY, 3 * DAY, 7 * DAY, 16 * DAY, 35 * DAY, 90 * DAY];
+let S = { words: {}, counter: 0, order: [], settings: {}, blocked: [] };
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.words) S = Object.assign(S, s); } catch (e) {}
+function fixOrder() {
+  const have = new Set(S.order.filter(id => byId.has(id)));
+  S.order = S.order.filter(id => byId.has(id));
+  const fresh = VOCAB.map(v => v.id).filter(id => !have.has(id));
+  if (!fresh.length) return;
+  // neue Wörter unter die noch nicht abgefragten mischen
+  const seenIds = S.order.filter(id => S.words[id]);
+  const unseen = S.order.filter(id => !S.words[id]).concat(fresh);
+  for (let i = unseen.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [unseen[i], unseen[j]] = [unseen[j], unseen[i]]; }
+  S.order = seenIds.concat(unseen);
+}
+fixOrder();
+function isBlocked(id) { return S.blocked.includes(id); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+let lastId = null;
+function pick() {
+  S.counter++;
+  const now = Date.now(); const learn = [], due = [];
+  for (const id in S.words) {
+    if (id === lastId || !byId.has(id) || isBlocked(id)) continue;
+    const w = S.words[id];
+    if (w.learn) learn.push([id, w]); else if (w.due <= now) due.push([id, w]);
+  }
+  learn.sort((a, b) => a[1].dueCard - b[1].dueCard);
+  if (learn.length && learn[0][1].dueCard <= S.counter) return learn[0][0];
+  if (learn.length >= 8) return learn[0][0];
+  if (due.length) { due.sort((a, b) => a[1].due - b[1].due); return due[0][0]; }
+  const nw = S.order.find(id => !S.words[id] && id !== lastId && !isBlocked(id));
+  if (nw) return nw;
+  if (learn.length) return learn[0][0];
+  let best = null;
+  for (const id in S.words) { if (id === lastId || !byId.has(id) || isBlocked(id)) continue; if (!best || S.words[id].due < S.words[best].due) best = id; }
+  return best || S.order.find(id => !isBlocked(id)) || S.order[0];
+}
+const FAST_MS = 3000, SLOW_MS = 6000;
+function grade(id, ok, rt) {
+  const now = Date.now(); const isNew = !S.words[id];
+  const speed = rt == null || rt < FAST_MS ? 'fast' : rt < SLOW_MS ? 'mid' : 'slow';
+  const w = S.words[id] || (S.words[id] = { box: 0, due: 0, learn: false, step: 0, dueCard: 0, right: 0, wrong: 0 });
+  w.last = now;
+  if (ok) {
+    w.right++; if (rt != null) w.rt = rt;
+    if (w.learn) {
+      if (speed === 'slow') { w.dueCard = S.counter + 4; save(); return; }
+      w.step++;
+      if (w.step >= 2) { w.learn = false; w.box = 1; w.due = now + IVL[1]; } else w.dueCard = S.counter + 6;
+    } else if (speed === 'slow') { w.learn = true; w.step = 1; w.box = 0; w.dueCard = S.counter + 6; }
+    else if (isNew) { w.box = speed === 'fast' ? 3 : 2; w.due = now + IVL[w.box]; }
+    else if (speed === 'mid') { w.box = Math.max(1, w.box); w.due = now + IVL[w.box]; }
+    else { w.box = Math.min(w.box + 1, 7); w.due = now + IVL[w.box]; }
+  } else { w.wrong++; w.learn = true; w.step = 0; w.box = 0; w.dueCard = S.counter + 3; }
+  save();
+}
+
+/* ---------- Einstellungen ---------- */
+const $ = id => document.getElementById(id);
+const set = Object.assign({ speakDe: true, beep: true, voiceEn: '', voiceDe: '', waitSec: 7 }, S.settings || {});
+function saveSettings() { S.settings = set; save(); }
+$('optSpeakDe').checked = set.speakDe; $('optBeep').checked = set.beep;
+$('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings(); };
+$('optWait').value = String(set.waitSec);
+$('optWait').onchange = e => { set.waitSec = +e.target.value; saveSettings(); };
+$('optBeep').onchange = e => { set.beep = e.target.checked; saveSettings(); };
+
+/* ---------- Sprachausgabe ---------- */
+const synth = window.speechSynthesis || null;
+let voices = [];
+function voicesFor(lang) { return voices.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith(lang)); }
+function bestVoice(lang) {
+  const pref = set[lang === 'en' ? 'voiceEn' : 'voiceDe'];
+  const list = voicesFor(lang);
+  return list.find(v => v.voiceURI === pref) ||
+    list.find(v => /google|natural|premium|enhanced|neural/i.test(v.name) && (lang !== 'en' || /us|gb/i.test(v.lang))) ||
+    list.find(v => lang !== 'en' || /en-us/i.test(v.lang.replace('_', '-'))) || list[0] || null;
+}
+function fillVoices() {
+  if (!synth) return;
+  voices = synth.getVoices();
+  for (const [lang, sel] of [['en', $('voiceEn')], ['de', $('voiceDe')]]) {
+    const list = voicesFor(lang); const cur = bestVoice(lang);
+    sel.innerHTML = '';
+    if (!list.length) { const o = document.createElement('option'); o.textContent = 'Standardstimme'; sel.append(o); continue; }
+    for (const v of list) { const o = document.createElement('option'); o.value = v.voiceURI; o.textContent = v.name + ' (' + v.lang + ')'; if (cur && v.voiceURI === cur.voiceURI) o.selected = true; sel.append(o); }
+  }
+}
+if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
+$('voiceEn').onchange = e => { set.voiceEn = e.target.value; saveSettings(); };
+$('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
+
+let speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
+const GRACE = 600;
+function say(text, lang) {
+  return new Promise(res => {
+    if (!synth) { res(); return; }
+    try { synth.cancel(); } catch (e) {}
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang === 'de' ? 'de-DE' : 'en-US';
+    const v = bestVoice(lang); if (v) u.voice = v;
+    u.rate = lang === 'de' ? 1.15 : 0.95;
+    let done = false;
+    const fin = () => {
+      if (done) return; done = true; clearTimeout(t);
+      speaking = false; quietUntil = Date.now() + GRACE; lastSpoken = { text, end: Date.now() };
+      setTimeout(flushMuted, GRACE + 20); setMic(); res();
+    };
+    const t = setTimeout(fin, 1800 + text.length * 120);
+    u.onend = fin; u.onerror = fin;
+    speaking = true; setMic();
+    synth.speak(u);
+  });
+}
+let actx = null;
+function beep() {
+  if (!set.beep) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.exponentialRampToValueAtTime(1320, t + 0.07);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.13);
+  } catch (e) {}
+}
+
+/* ---------- Spracherkennung: Plattform-Diktat oder Web Speech API ---------- */
+let dict = null, dictResolved = false, rec = null, listening = false, wantListen = false, micError = '';
+let dictNoLang = false, recEverStarted = false, needTap = false, restartTries = 0;
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IOS_HELP = IS_IOS
+  ? 'Mikrofon nicht erlaubt. Bitte prüfen: 1) Einstellungen → Apps → Safari → Mikrofon auf „Fragen“ oder „Erlauben“. 2) Einstellungen → Allgemein → Tastatur → „Diktierfunktion“ einschalten (Safari braucht sie für die Spracherkennung). 3) Die Seite in Safari selbst öffnen, nicht über das Homescreen-Symbol. Danach Seite neu laden und Start drücken.'
+  : 'Mikrofon nicht erlaubt. Bitte in der Adressleiste beim Schloss-Symbol das Mikrofon erlauben und die Seite neu laden. Du kannst die Antworten auch tippen.';
+// Safari darf das Mikrofon manchmal nur nach einem Antippen wieder einschalten
+document.addEventListener('pointerdown', e => {
+  if (!needTap || !running || !rec || e.target.closest('#startBtn')) return;
+  needTap = false; try { rec.start(); } catch (err) {} setMic();
+}, true);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function engineLabel() {
+  $('engine').textContent = dict ? 'Spracherkennung: Claude-Diktat' : SR ? 'Spracherkennung: Browser' : 'Keine Spracherkennung, bitte tippen';
+}
+if (window.claude && typeof window.claude.use === 'function') {
+  window.claude.use('dictation').then(d => {
+    dict = d; dictResolved = true; engineLabel();
+    if (!d) return;
+    d.onPartial(({ text }) => onPartial(text));
+    d.onFinal(({ text }) => onFinal([text]));
+    d.onState(({ state, reason }) => {
+      listening = state === 'listening';
+      if (state === 'idle' && reason) {
+        if (reason === 'unavailable' && !dictNoLang) { dictNoLang = true; micError = 'Englisches Diktat nicht verfügbar. Drück noch einmal auf Start.'; pause(); }
+        else if (['not_granted', 'unavailable', 'upstream_error', 'rate_limited'].includes(reason)) { micError = reason === 'not_granted' ? 'Mikrofon nicht erlaubt. Du kannst die Antworten tippen.' : 'Spracherkennung hat gerade ein Problem. Nochmal Start drücken oder tippen.'; pause(); }
+        else if (running) pause();
+      }
+      setMic();
+    });
+  }).catch(() => { dictResolved = true; engineLabel(); });
+} else { dictResolved = true; engineLabel(); }
+engineLabel();
+
+function startListening() {
+  wantListen = true; micError = '';
+  if (dict) {
+    dict.start(dictNoLang ? undefined : { language: 'en' }).catch(e => {
+      if (e && e.code === 'unavailable' && !dictNoLang) { dictNoLang = true; micError = 'Englisches Diktat nicht verfügbar. Drück noch einmal auf Start.'; }
+      else if (e && e.code !== 'stopped') micError = e.code === 'not_granted' ? 'Mikrofon nicht erlaubt. Du kannst die Antworten tippen.' : 'Spracherkennung konnte nicht starten (' + (e.code || 'Fehler') + '). Du kannst tippen.';
+      if (micError) { pause(); }
+      setMic();
+    });
+    return;
+  }
+  if (!SR) { micError = 'Dieser Browser hat keine Spracherkennung. Nimm Chrome oder Edge, oder tippe die Antworten.'; setMic(); return; }
+  if (!rec) {
+    rec = new SR(); rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
+    rec.onstart = () => { listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
+    rec.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) onFinal(Array.from(r).map(a => a.transcript));
+        else interim += r[0].transcript;
+      }
+      if (interim) onPartial(interim);
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
+        micError = IOS_HELP; wantListen = false; pause();
+      }
+      else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
+      setMic();
+    };
+    rec.onend = () => { listening = false; setMic(); if (wantListen && running && !needTap) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+  }
+  try { rec.start(); } catch (e) {}
+}
+function stopListening() {
+  wantListen = false;
+  if (dict) { dict.stop().catch(() => {}); }
+  if (rec) { try { rec.stop(); } catch (e) {} }
+}
+
+/* ---------- Ablauf ---------- */
+let running = false, phase = 'idle', cur = null;
+let pending = '', pendingTimer = null, swallowUntil = 0, mutedText = '', prevCard = { en: [], at: 0 };
+let session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
+const recentWrong = [];
+function isMuted() { return speaking || Date.now() < quietUntil; }
+function isEcho(text) {
+  const now = Date.now();
+  if (now - lastSpoken.end < 4000 && matches(text, [lastSpoken.text])) return true;
+  if (now - prevCard.at < 5000 && matches(text, prevCard.en)) return true;
+  return false;
+}
+function showHeard(text, partial) {
+  const h = $('heard'); h.className = 'heard' + (partial ? ' partial' : '');
+  h.innerHTML = text ? 'Gehört: <b></b>' : '';
+  if (text) h.querySelector('b').textContent = text;
+}
+function onPartial(text) {
+  text = (text || '').trim(); if (!text || !running) return;
+  if (phase !== 'answer') return;
+  if (isMuted()) { mutedText = text; return; }
+  markHeard();
+  if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+  const combined = (pending + ' ' + text).trim();
+  showHeard(combined, true); armSilence();
+  if (matches(combined, cur.en)) { swallowUntil = Date.now() + 2500; accept(true, combined); }
+}
+function onFinal(alts) {
+  alts = alts.map(a => (a || '').trim()).filter(Boolean); if (!alts.length || !running) return;
+  if (swallowUntil && Date.now() < swallowUntil) { swallowUntil = 0; return; }
+  swallowUntil = 0;
+  if (phase !== 'answer') return;
+  if (isMuted()) { mutedText = alts[0]; return; }
+  markHeard();
+  const ok = alts.find(a => matches((pending + ' ' + a).trim(), cur.en));
+  if (ok) return accept(true, (pending + ' ' + ok).trim());
+  const text = alts[0];
+  if (isBlockCmd(text)) return blockByVoice();
+  if (isEcho(text) || isFiller(text)) return;
+  const combined = (pending + ' ' + text).trim();
+  if (isPass(text)) return accept(false, '');
+  pending = combined; showHeard(combined, false);
+  clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => { pendingTimer = null; if (phase === 'answer' && pending) accept(false, pending); }, 900);
+}
+let lastWrong = { id: null, at: 0 };
+async function blockByVoice() {
+  if (!cur) return;
+  const target = (lastWrong.id && lastWrong.id !== cur.id && Date.now() - lastWrong.at < 8000) ? lastWrong.id : cur.id;
+  const item = byId.get(target);
+  blockWord(target);
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
+  $('card').className = 'card'; $('fb').innerHTML = '<span class="alt">Ausgeblendet: ' + esc(item.de) + '</span>';
+  await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, ''), 'de');
+  if (running) next();
+}
+function blockWord(id) {
+  if (!isBlocked(id)) S.blocked.push(id);
+  for (let i = recentWrong.length - 1; i >= 0; i--) if (recentWrong[i].id === id) recentWrong.splice(i, 1);
+  save(); renderRecent(); renderBlocked(); updateStats();
+}
+function unblockWord(id) { S.blocked = S.blocked.filter(x => x !== id); save(); renderBlocked(); updateStats(); }
+function renderBlocked() {
+  $('blockedCount').textContent = S.blocked.length;
+  $('blockedList').innerHTML = S.blocked.length ? S.blocked.filter(id => byId.has(id)).map(id => '<span class="chip"><i>' + esc(id) + '</i> ' + esc(byId.get(id).en[0]) + ' <button type="button" class="x" data-unblock="' + esc(id) + '" aria-label="Zurückholen">↺</button></span>').join('') : '<span class="muted">Noch keine.</span>';
+}
+let readyAt = 0, firstHeardAt = 0;
+function markHeard() { if (!firstHeardAt) firstHeardAt = Math.max(Date.now(), readyAt); }
+let silenceTimer = null;
+function armSilence() {
+  clearTimeout(silenceTimer);
+  if (!set.waitSec || !running || phase !== 'answer') return;
+  const item = cur;
+  silenceTimer = setTimeout(() => {
+    if (!running || phase !== 'answer' || cur !== item) return;
+    if (isMuted() || pending || pendingTimer) { armSilence(); return; }
+    accept(false, '');
+  }, set.waitSec * 1000);
+}
+function flushMuted() {
+  if (isMuted() || phase !== 'answer' || !mutedText) { if (!isMuted()) mutedText = ''; return; }
+  const t = mutedText; mutedText = '';
+  if (isBlockCmd(t)) return blockByVoice();
+  if (matches(t, cur.en)) accept(true, t);
+}
+function renderWord(item) {
+  const m = item.de.match(/^(der|die|das|sich)\s+(.+)$/);
+  const w = $('word'); w.innerHTML = '';
+  if (m) { const a = document.createElement('span'); a.className = 'art'; a.textContent = m[1]; w.append(a, document.createTextNode(m[2])); }
+  else w.textContent = item.de;
+  const st = S.words[item.id];
+  $('tag').textContent = !st ? 'neu' : st.learn ? 'üben' : 'Wiederholung';
+}
+async function next() {
+  if (!running) return;
+  const id = pick(); lastId = id; cur = byId.get(id);
+  pending = ''; mutedText = ''; clearTimeout(pendingTimer); pendingTimer = null;
+  $('card').className = 'card'; $('fb').innerHTML = ''; showHeard('', false);
+  renderWord(cur); phase = 'answer'; readyAt = Date.now(); firstHeardAt = 0; $('blockBtn').hidden = false;
+  updateStats();
+  const myItem = cur;
+  if (set.speakDe) await say(cur.de, 'de');
+  if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); armSilence(); }
+}
+async function accept(ok, heard) {
+  if (phase !== 'answer' || !cur) return;
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
+  const item = cur;
+  const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
+  grade(item.id, ok, rt);
+  prevCard = { en: item.en, at: Date.now() };
+  if (ok) {
+    session.right++; beep();
+    $('card').className = 'card ok';
+    $('fb').innerHTML = '<span class="okmark">✓ ' + esc(item.en[0]) + '</span><span class="alt">' + (rt / 1000).toFixed(1).replace('.', ',') + ' s' + (rt >= SLOW_MS ? ' · kommt bald wieder' : rt >= FAST_MS ? ' · etwas langsam' : '') + '</span>';
+    updateStats();
+    await sleep(set.speakDe ? 150 : 350);
+  } else {
+    session.wrong++; lastWrong = { id: item.id, at: Date.now() };
+    $('card').className = 'card bad';
+    const others = item.en.slice(1, 4);
+    $('fb').innerHTML = '<span class="sol">' + esc(item.en[0]) + '</span>' + (others.length ? '<span class="alt">auch: ' + others.map(esc).join(', ') + '</span>' : '');
+    if (heard) showHeard(heard, false);
+    recentWrong.unshift(item);
+    updateStats(); renderRecent();
+    await say(item.en[0], 'en');
+    await sleep(300);
+  }
+  if (running) next();
+}
+function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function renderRecent() {
+  const seen = new Set(), list = [];
+  for (const it of recentWrong) { if (seen.has(it.id)) continue; seen.add(it.id); list.push(it); if (list.length >= 8) break; }
+  recentWrong.length = 0; recentWrong.push(...list);
+  $('recentWrap').hidden = !list.length;
+  $('recent').innerHTML = list.map(it => '<span class="chip"><i>' + esc(it.de) + '</i> ' + esc(it.en[0]) + ' <button type="button" class="x" data-block="' + esc(it.id) + '" aria-label="Wort ausblenden">✕</button></span>').join('');
+}
+function updateStats() {
+  let known = 0, learn = 0;
+  for (const id in S.words) { if (!byId.has(id) || isBlocked(id)) continue; const w = S.words[id]; if (w.learn) learn++; else if (w.box >= 3) known++; }
+  const seen = VOCAB.filter(v => S.words[v.id] || isBlocked(v.id)).length;
+  $('sRight').textContent = session.right; $('sWrong').textContent = session.wrong;
+  const ms = session.activeMs + (running ? Date.now() - session.since : 0);
+  const n = session.right + session.wrong;
+  $('sWpm').textContent = n >= 3 && ms > 15000 ? (n / (ms / 60000)).toFixed(1).replace('.', ',') : '–';
+  $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = VOCAB.length - seen;
+  $('countInfo').textContent = 'Wortschatz: ' + VOCAB.length + ' Alltagswörter.';
+}
+function setMic() {
+  const dot = $('dot'), t = $('micText');
+  dot.className = 'dot';
+  if (micError) { dot.classList.add('err'); t.textContent = 'Mikrofon aus'; showNotice(micError); }
+  else { showNotice(''); }
+  if (micError) return;
+  if (!running) { t.textContent = 'Pausiert'; return; }
+  if (speaking) { dot.classList.add('talk'); t.textContent = 'Spricht …'; return; }
+  if (needTap) { dot.classList.add('err'); t.textContent = 'Antippen, um weiterzusprechen'; return; }
+  if (listening) { dot.classList.add('on'); t.textContent = 'Hört zu'; return; }
+  t.textContent = wantListen ? 'Mikrofon startet …' : 'Nur Tippen';
+}
+function showNotice(msg) { const n = $('notice'); n.hidden = !msg; n.textContent = msg; }
+let wakeLock = null;
+function requestWake() { try { navigator.wakeLock && navigator.wakeLock.request('screen').then(l => wakeLock = l).catch(() => {}); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && running) requestWake(); });
+function start() {
+  if (running) return;
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) {}
+  running = true; session.since = Date.now();
+  startListening();
+  $('startBtn').textContent = 'Pause';
+  requestWake();
+  setMic(); next();
+}
+function pause() {
+  if (running) session.activeMs += Date.now() - session.since;
+  running = false; phase = 'idle';
+  stopListening();
+  try { synth && synth.cancel(); } catch (e) {}
+  speaking = false;
+  $('startBtn').textContent = 'Weiter';
+  try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null;
+  setMic(); updateStats();
+}
+$('startBtn').addEventListener('click', () => running ? pause() : start());
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { running ? pause() : null; }
+  else if (e.key === ' ' && document.activeElement === document.body) { e.preventDefault(); running ? pause() : start(); }
+});
+$('typeForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('typed').value.trim(); $('typed').value = '';
+  if (!running) {
+    running = true; session.since = Date.now(); $('startBtn').textContent = 'Pause'; setMic(); next();
+    return;
+  }
+  if (phase !== 'answer') return;
+  if (!v || isPass(v)) return accept(false, '');
+  accept(matches(v, cur.en), v);
+});
+$('blockBtn').onclick = () => { if (!cur) return; const id = cur.id; blockWord(id); if (running && phase === 'answer') { phase = 'feedback'; clearTimeout(silenceTimer); try { synth && synth.cancel(); } catch (e) {} next(); } else { $('fb').innerHTML = '<span class="alt">Ausgeblendet</span>'; } };
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-block]'); if (b) { blockWord(b.dataset.block); return; }
+  const u = e.target.closest('[data-unblock]'); if (u) unblockWord(u.dataset.unblock);
+});
+$('resetBtn').onclick = () => { $('resetConfirm').hidden = false; };
+$('resetNo').onclick = () => { $('resetConfirm').hidden = true; };
+$('resetYes').onclick = () => {
+  pause(); S.words = {}; S.counter = 0; S.order = []; S.blocked = []; fixOrder(); renderBlocked(); save(); session = { right: 0, wrong: 0, activeMs: 0, since: 0 }; recentWrong.length = 0; renderRecent(); $('resetConfirm').hidden = true; $('startBtn').textContent = 'Start'; updateStats();
+};
+setInterval(() => { if (running) updateStats(); }, 5000);
+renderBlocked(); updateStats(); setMic();
+</script>
+</body></html>
