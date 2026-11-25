@@ -195,7 +195,6 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
     <div>
       <label class="opt"><input type="checkbox" id="optSpeakDe" checked> Deutsches Wort vorlesen (für Training ohne Hinschauen)</label>
       <label class="opt"><input type="checkbox" id="optBeep" checked> Kurzer Ton bei richtiger Antwort</label>
-      <label class="opt"><input type="checkbox" id="optHold"> Auto-Verbindung halten (Test): Mikrofon bleibt dauerhaft offen, damit die Freisprecheinrichtung nicht ständig neu verbindet</label>
       <label class="opt" style="flex-wrap:wrap">Lösung automatisch sagen nach <select id="optWait"><option value="4">4 Sekunden</option><option value="7">7 Sekunden</option><option value="10">10 Sekunden</option><option value="15">15 Sekunden</option><option value="0">nie</option></select></label>
       <label class="opt" style="flex-wrap:wrap">Englische Stimme <select id="voiceEn"></select></label>
       <label class="opt" style="flex-wrap:wrap">Deutsche Stimme <select id="voiceDe"></select></label>
@@ -1422,8 +1421,8 @@ $('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings()
 $('optWait').value = String(set.waitSec);
 $('optWait').onchange = e => { set.waitSec = +e.target.value; saveSettings(); };
 $('optBeep').onchange = e => { set.beep = e.target.checked; saveSettings(); };
-$('optHold').checked = !!set.holdMic;
-$('optHold').onchange = e => { set.holdMic = e.target.checked; saveSettings(); if (!set.holdMic) releaseHold(); };
+// Dauer-Mikrofon-Test entfernt: unter iOS lenkte es die Sprachausgabe auf den Hörer um und blockierte die Erkennung
+set.holdMic = false;
 let holdStream = null;
 function grabHold() {
   if (!set.holdMic || holdStream || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
