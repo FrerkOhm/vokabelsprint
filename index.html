@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 22:35';
+const APP_VERSION = 'Version 25.11. 22:40';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1481,7 +1481,7 @@ function say(text, lang) {
     let wasListening = false;
     if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; wasListening = listening; try { rec.abort(); } catch (x) {} }
     // iPhone braucht nach dem Mikro einen Moment, bis der Lautsprecher bereit ist. Sonst fehlt der Wortanfang oder die Ausgabe bleibt stumm.
-    if (hadOld || wasListening || (IS_IOS && Date.now() - lastMicOff < 400)) setTimeout(() => { if (!done && myTurn === sayTurn) synth.speak(u); }, 350);
+    if (hadOld || micOffForSpeech || wasListening || (IS_IOS && Date.now() - lastMicOff < 400)) setTimeout(() => { if (!done && myTurn === sayTurn) synth.speak(u); }, 350);
     else synth.speak(u);
   });
 }
