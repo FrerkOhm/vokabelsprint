@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 22:20';
+const APP_VERSION = 'Version 25.11. 22:25';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1448,7 +1448,7 @@ if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
 $('voiceEn').onchange = e => { set.voiceEn = e.target.value; saveSettings(); };
 $('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
 
-let sayTurn = 0, micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
+let lastMicOff = 0, sayTurn = 0, micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
 const GRACE = 600;
 function say(text, lang) {
   return new Promise(res => {
@@ -1476,8 +1476,11 @@ function say(text, lang) {
     u.onstart = () => { dlog('Sprachausgabe läuft'); clearTimeout(t); t = setTimeout(() => { try { synth.cancel(); } catch (x) {} fin(); }, 2500 + text.length * 130); };
     speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
     // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
-    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
-    synth.speak(u);
+    let wasListening = false;
+    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; wasListening = listening; try { rec.abort(); } catch (x) {} }
+    // iPhone braucht nach dem Mikro einen Moment, bis der Lautsprecher bereit ist. Sonst fehlt der Wortanfang oder die Ausgabe bleibt stumm.
+    if (wasListening || (IS_IOS && Date.now() - lastMicOff < 400)) setTimeout(() => { if (!done && myTurn === sayTurn) synth.speak(u); }, 350);
+    else synth.speak(u);
   });
 }
 let actx = null;
@@ -1570,7 +1573,7 @@ function startListening() {
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { dlog('Erkennung beendet'); listening = false; setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; lastMicOff = Date.now(); setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { try { rec.start(); } catch (e) { setTimeout(() => { try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
   }
   try { rec.start(); } catch (e) {}
 }
