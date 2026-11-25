@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 22:40';
+const APP_VERSION = 'Version 25.11. 22:55';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1448,14 +1448,22 @@ if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
 $('voiceEn').onchange = e => { set.voiceEn = e.target.value; saveSettings(); };
 $('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
 
-let lastMicOff = 0, sayTurn = 0, micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
+let lastMicOff = 0, sayTurn = 0, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
 const GRACE = 600;
+// iPhone (Halbduplex): Mikro und Lautsprecher nie gleichzeitig. Ablauf je Wort:
+// Wort zeigen → Mikro sicher aus → kurze Pause → vorlesen → echtes Ende abwarten → Mikro an → zuhören.
+const GATE = () => IS_IOS && !dict;
 function say(text, lang) {
-  return new Promise(res => {
+  return new Promise(async res => {
     if (!synth) { res(); return; }
-    // Safari verschluckt ein speak() direkt nach cancel(). Nur abbrechen, wenn wirklich etwas läuft, und dann kurz warten.
+    const myTurn = ++sayTurn;
+    speaking = true; setMic(); syncMic(); dlog('Sprachausgabe: ' + text);
+    // Safari verschluckt ein speak() direkt nach cancel(). Nur abbrechen, wenn wirklich etwas läuft.
     let hadOld = false;
     try { if (synth.speaking || synth.pending) { synth.cancel(); hadOld = true; } } catch (e) {}
+    if (GATE()) await micOff();
+    if (hadOld || (GATE() && Date.now() - lastMicOff < 400)) await sleep(300);
+    if (myTurn !== sayTurn) { res(); return; }
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === 'de' ? 'de-DE' : 'en-US';
     // iPhone: nur eine selbst gewählte Stimme setzen. Automatisch gewählte „Premium“-Stimmen sind oft nicht geladen und bleiben stumm.
@@ -1463,26 +1471,47 @@ function say(text, lang) {
     const v = IS_IOS ? (pref ? voices.find(x => x.voiceURI === pref) : null) : bestVoice(lang); if (v) u.voice = v;
     try { synth.resume(); } catch (e) {}
     u.rate = lang === 'de' ? 1.15 : 0.95;
-    let done = false; const myTurn = ++sayTurn;
+    let done = false, t = null;
     const fin = () => {
       if (done) return; done = true; clearTimeout(t);
       if (myTurn !== sayTurn) { res(); return; }
-      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 150 : GRACE); lastSpoken = { text, end: Date.now() };
-      if (micOffForSpeech) { micOffForSpeech = false; if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} } }
-      setTimeout(flushMuted, GRACE + 20); setMic(); res();
+      speaking = false; quietUntil = Date.now() + (GATE() ? 0 : GRACE); lastSpoken = { text, end: Date.now() };
+      if (!GATE()) setTimeout(flushMuted, GRACE + 20);
+      setMic(); res();
     };
-    // Notbremse erst ab dem echten Start der Ausgabe messen. iPhone braucht manchmal 1–3 s bis zum Start;
-    // vorher lief die Zeit schon ab, das Mikro ging an und das Wort kam danach noch.
-    let t = setTimeout(() => { dlog('Sprachausgabe startet nicht'); try { synth.cancel(); } catch (x) {} fin(); }, 6000);
+    // Notbremse erst ab dem echten Start der Ausgabe messen (iPhone braucht manchmal 1–3 s bis zum Start).
+    t = setTimeout(() => { dlog('Sprachausgabe startet nicht'); try { synth.cancel(); } catch (x) {} fin(); }, 6000);
     u.onend = fin; u.onerror = e => { dlog('Sprachausgabe-Fehler: ' + (e && e.error)); fin(); };
     u.onstart = () => { dlog('Sprachausgabe läuft'); clearTimeout(t); t = setTimeout(() => { try { synth.cancel(); } catch (x) {} fin(); }, 2500 + text.length * 130); };
-    speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
-    // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
-    let wasListening = false;
-    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; wasListening = listening; try { rec.abort(); } catch (x) {} }
-    // iPhone braucht nach dem Mikro einen Moment, bis der Lautsprecher bereit ist. Sonst fehlt der Wortanfang oder die Ausgabe bleibt stumm.
-    if (hadOld || micOffForSpeech || wasListening || (IS_IOS && Date.now() - lastMicOff < 400)) setTimeout(() => { if (!done && myTurn === sayTurn) synth.speak(u); }, 350);
-    else synth.speak(u);
+    synth.speak(u);
+  });
+}
+// Einzige Stelle, die das Mikro ein- oder ausschaltet.
+let recBusy = false, recBusyAt = 0, syncT = null, onMicStart = null;
+function micWanted() {
+  if (!rec || dict || !wantListen || !running || needTap) return false;
+  if (!GATE()) return true;
+  return phase === 'answer' && !speaking;
+}
+function syncMic() {
+  clearTimeout(syncT);
+  if (!rec || dict) return;
+  if (recBusy && Date.now() - recBusyAt > 4000) recBusy = false;
+  if (micWanted()) {
+    if (listening || recBusy) return;
+    syncT = setTimeout(() => {
+      if (!micWanted() || listening || recBusy) return;
+      recBusy = true; recBusyAt = Date.now();
+      try { rec.start(); dlog('Mikro an'); } catch (e) { recBusy = false; dlog('Mikro-Start abgelehnt'); syncT = setTimeout(syncMic, 500); }
+    }, 150);
+  } else if (listening || recBusy) { try { rec.abort(); } catch (e) {} }
+}
+function micOff() {
+  return new Promise(r => {
+    if (!rec || dict || (!listening && !recBusy)) return r();
+    try { rec.abort(); } catch (e) {}
+    const t0 = Date.now();
+    const iv = setInterval(() => { if ((!listening && !recBusy) || Date.now() - t0 > 900) { clearInterval(iv); listening = false; recBusy = false; r(); } }, 30);
   });
 }
 let actx = null;
@@ -1513,7 +1542,7 @@ const IOS_HELP = IS_IOS
 // Safari darf das Mikrofon manchmal nur nach einem Antippen wieder einschalten
 document.addEventListener('pointerdown', e => {
   if (!needTap || !running || !rec || e.target.closest('#startBtn')) return;
-  needTap = false; tapConsumedAt = Date.now(); try { rec.start(); } catch (err) {} setMic();
+  needTap = false; tapConsumedAt = Date.now(); if (!GATE() || micWanted()) { recBusy = true; recBusyAt = Date.now(); try { rec.start(); } catch (err) { recBusy = false; } } setMic();
 }, true);
 let tapConsumedAt = 0;
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1554,7 +1583,7 @@ function startListening() {
   if (!rec) {
     rec = new SR(); rec.lang = 'en-US'; rec.continuous = !IS_IOS; rec.interimResults = true; if (!IS_IOS) rec.maxAlternatives = 3;
     rec.onaudiostart = () => dlog('Audio an'); rec.onspeechstart = () => dlog('Sprache erkannt');
-    rec.onstart = () => { dlog('Erkennung gestartet'); listening = true; recEverStarted = true; needTap = false; setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); };
+    rec.onstart = () => { dlog('Erkennung gestartet'); listening = true; recBusy = false; recEverStarted = true; needTap = false; if (onMicStart) { const f = onMicStart; onMicStart = null; f(); } if (GATE() && phase === 'answer' && !firstHeardAt) readyAt = Math.max(readyAt, Date.now()); setMic(); setTimeout(() => { if (listening) restartTries = 0; }, 3000); if (!micWanted() && !onMicStartKeep()) { try { rec.abort(); } catch (x) {} } };
     rec.onresult = e => {
       try { dlog('Ergebnis: ' + e.results[e.results.length - 1][0].transcript); } catch (x) {}
       lastResultAt = Date.now(); silentMisses = 0;
@@ -1569,20 +1598,22 @@ function startListening() {
     rec.onerror = e => {
       dlog('Fehler: ' + e.error);
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(() => { if (!(IS_IOS && speaking)) try { rec.start(); } catch (x) {} }, 700); return; } needTap = true; setMic(); return; }
+        if (recEverStarted && running) { if (restartTries++ < 3) { setTimeout(syncMic, 700); return; } needTap = true; setMic(); return; }
         micError = IOS_HELP; wantListen = false; pause();
       }
       else if (e.error === 'network') { micError = 'Spracherkennung braucht eine Internetverbindung.'; }
       setMic();
     };
-    rec.onend = () => { dlog('Erkennung beendet'); listening = false; lastMicOff = Date.now(); setMic(); if (wantListen && running && !needTap && !(IS_IOS && speaking)) setTimeout(() => { if (IS_IOS && speaking) return; try { rec.start(); } catch (e) { setTimeout(() => { if (IS_IOS && speaking) return; try { rec.start(); } catch (e2) { needTap = true; setMic(); } }, 600); } }, 120); };
+    rec.onend = () => { dlog('Erkennung beendet'); listening = false; recBusy = false; lastMicOff = Date.now(); if (onMicStart) { const f = onMicStart; onMicStart = null; f(); } setMic(); syncMic(); };
   }
-  try { rec.start(); } catch (e) {}
+  // Erster Start direkt im Antippen (Safari will dafür eine Berührung, hier kommt auch die Erlaubnisabfrage)
+  if (!listening && !recBusy) { recBusy = true; recBusyAt = Date.now() + 8000; try { rec.start(); } catch (e) { recBusy = false; } }
 }
+function onMicStartKeep() { return !running || phase === 'idle'; }
 function stopListening() {
   wantListen = false;
   if (dict) { dict.stop().catch(() => {}); }
-  if (rec) { try { rec.stop(); } catch (e) {} }
+  if (rec) { try { rec.abort(); } catch (e) {} }
 }
 
 /* ---------- Ablauf ---------- */
@@ -1639,7 +1670,7 @@ async function blockByVoice() {
   const target = (lastWrong.id && lastWrong.id !== cur.id && Date.now() - lastWrong.at < 8000) ? lastWrong.id : cur.id;
   const item = byId.get(target);
   blockWord(target);
-  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer); syncMic();
   $('card').className = 'card'; $('fb').innerHTML = '<span class="alt">Ausgeblendet: ' + esc(item.de) + '</span>';
   if (!running) return;
   await say('Gelöscht: ' + item.de.replace(/^(der|die|das|sich)\s+/, '').replace(/\s*\(.+\)/, ''), 'de');
@@ -1697,11 +1728,11 @@ async function next() {
   updateStats();
   const myItem = cur;
   if (set.speakDe) await say(cur.de.replace(/\s*\((.+)\)/, ', $1'), 'de');
-  if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); armSilence(); }
+  if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); syncMic(); armSilence(); }
 }
 async function accept(ok, heard) {
   if (phase !== 'answer' || !cur) return;
-  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
+  phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer); syncMic();
   const item = cur; const tok = ++advanceToken;
   const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
   grade(item.id, ok, rt);
@@ -1771,7 +1802,9 @@ function start() {
   startListening();
   $('startBtn').textContent = 'Pause';
   requestWake();
-  setMic(); next();
+  setMic();
+  if (GATE() && rec && recBusy) { let go = false; const f = () => { if (go) return; go = true; next(); }; onMicStart = f; setTimeout(f, 8000); }
+  else next();
 }
 function pause() {
   if (running) session.activeMs += Date.now() - session.since;
@@ -1850,10 +1883,10 @@ function setMode(m) {
   document.querySelectorAll('.tabs [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
   lastId = null; cur = null; phase = 'idle';
   $('card').className = 'card'; $('fb').innerHTML = ''; $('blockBtn').hidden = true;
-  $('word').textContent = m === 'p' ? 'Kannst du das kurz erklären?' : m === 't' ? 'das Zahnrad' : 'Schlüssel';
-  $('word').classList.toggle('long', m === 'p');
+  $('word').textContent = 'Bereit';
+  $('word').classList.remove('long');
   showHeard(m === 'p' ? 'Drück auf Start und sag den Satz auf Englisch.' : 'Drück auf Start und sag das englische Wort.', false);
-  $('tag').textContent = 'Beispiel';
+  $('tag').textContent = '';
   $('startBtn').textContent = 'Start';
   session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
   updateStats();
