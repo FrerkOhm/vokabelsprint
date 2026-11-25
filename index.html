@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 21:45 (Stand 24.11.)';
+const APP_VERSION = 'Version 25.11. 22:00';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1456,7 +1456,10 @@ function say(text, lang) {
     try { synth.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === 'de' ? 'de-DE' : 'en-US';
-    const v = bestVoice(lang); if (v) u.voice = v;
+    // iPhone: nur eine selbst gewählte Stimme setzen. Automatisch gewählte „Premium“-Stimmen sind oft nicht geladen und bleiben stumm.
+    const pref = set[lang === 'en' ? 'voiceEn' : 'voiceDe'];
+    const v = IS_IOS ? (pref ? voices.find(x => x.voiceURI === pref) : null) : bestVoice(lang); if (v) u.voice = v;
+    try { synth.resume(); } catch (e) {}
     u.rate = lang === 'de' ? 1.15 : 0.95;
     let done = false;
     const fin = () => {
@@ -1466,7 +1469,8 @@ function say(text, lang) {
       setTimeout(flushMuted, GRACE + 20); setMic(); res();
     };
     const t = setTimeout(fin, 1800 + text.length * 120);
-    u.onend = fin; u.onerror = fin;
+    u.onend = fin; u.onerror = e => { dlog('Sprachausgabe-Fehler: ' + (e && e.error)); fin(); };
+    u.onstart = () => dlog('Sprachausgabe läuft');
     speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
     // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
     if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
