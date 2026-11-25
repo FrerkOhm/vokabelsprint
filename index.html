@@ -238,6 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
+const APP_VERSION = 'Version 25.11. 17:00';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1763,7 +1764,7 @@ function updateStats() {
   const n = session.right + session.wrong;
   $('sWpm').textContent = n >= 3 && ms > 15000 ? (n / (ms / 60000)).toFixed(1).replace('.', ',') : '–';
   $('sKnown').textContent = known; $('sLearn').textContent = learn; $('sNew').textContent = deckItems.length - seen;
-  $('countInfo').textContent = 'Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter, ' + VOCAB.filter(v => v.deck === 't').length + ' Technikbegriffe und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
+  $('countInfo').textContent = APP_VERSION + ' · Inhalt: ' + VOCAB.filter(v => v.deck === 'w').length + ' Wörter, ' + VOCAB.filter(v => v.deck === 't').length + ' Technikbegriffe und ' + VOCAB.filter(v => v.deck === 'p').length + ' Arbeitssätze.';
 }
 function setMic() {
   setTimeout(driveHint, 0);
