@@ -238,7 +238,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
 <script>
 /* ---------- Wortschatz: Deutsch | Englisch;Alternativen ---------- */
-const APP_VERSION = 'Version 25.11. 17:00';
+const APP_VERSION = 'Version 25.11. 21:45 (Stand 24.11.)';
 const VOCAB_RAW = `
 der Mann|man;husband
 die Frau|woman;wife
@@ -1422,16 +1422,6 @@ $('optSpeakDe').onchange = e => { set.speakDe = e.target.checked; saveSettings()
 $('optWait').value = String(set.waitSec);
 $('optWait').onchange = e => { set.waitSec = +e.target.value; saveSettings(); };
 $('optBeep').onchange = e => { set.beep = e.target.checked; saveSettings(); };
-// Dauer-Mikrofon-Test entfernt: unter iOS lenkte es die Sprachausgabe auf den Hörer um und blockierte die Erkennung
-set.holdMic = false;
-let holdStream = null;
-function grabHold() {
-  if (!set.holdMic || holdStream || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-  navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
-    .then(st => { holdStream = st; dlog('Mikrofon dauerhaft offen'); if (!running) releaseHold(); })
-    .catch(e => dlog('Dauer-Mikrofon nicht möglich: ' + (e && e.name)));
-}
-function releaseHold() { if (holdStream) { holdStream.getTracks().forEach(t => t.stop()); holdStream = null; dlog('Dauer-Mikrofon aus'); } }
 
 /* ---------- Sprachausgabe ---------- */
 const synth = window.speechSynthesis || null;
@@ -1460,45 +1450,26 @@ $('voiceDe').onchange = e => { set.voiceDe = e.target.value; saveSettings(); };
 
 let micOffForSpeech = false, speaking = false, quietUntil = 0, lastSpoken = { text: '', end: 0 };
 const GRACE = 600;
-function micOff() {
-  if (IS_IOS && rec && !dict && wantListen && !micOffForSpeech) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
-}
-function micOn() {
-  if (!micOffForSpeech) return; micOffForSpeech = false;
-  setTimeout(() => tryStart(0), 120);
-}
-// Start mit Kontrolle: iOS startet die Erkennung nach dem Vorlesen manchmal stumm nicht. Dann erneut versuchen.
-function tryStart(attempt) {
-  if (!rec || !wantListen || !running || needTap || speaking || micOffForSpeech || listening) return;
-  try { rec.start(); dlog('Erkennung neu (Versuch ' + (attempt + 1) + ')'); } catch (x) { dlog('Start-Fehler: ' + x.name); }
-  setTimeout(() => {
-    if (!listening && rec && wantListen && running && !needTap && !speaking && !micOffForSpeech && attempt < 3) {
-      dlog('Erkennung kam nicht in Gang, neuer Versuch');
-      try { rec.abort(); } catch (x) {}
-      setTimeout(() => tryStart(attempt + 1), 250);
-    }
-  }, 1500);
-}
-function say(text, lang, hold) {
+function say(text, lang) {
   return new Promise(res => {
     if (!synth) { res(); return; }
     try { synth.cancel(); } catch (e) {}
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === 'de' ? 'de-DE' : 'en-US';
     const v = bestVoice(lang); if (v) u.voice = v;
-    u.rate = lang === 'de' ? 1.25 : 0.95;
+    u.rate = lang === 'de' ? 1.15 : 0.95;
     let done = false;
     const fin = () => {
       if (done) return; done = true; clearTimeout(t);
-      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 100 : GRACE); lastSpoken = { text, end: Date.now() };
-      if (!hold) micOn();
+      speaking = false; quietUntil = Date.now() + (micOffForSpeech ? 150 : GRACE); lastSpoken = { text, end: Date.now() };
+      if (micOffForSpeech) { micOffForSpeech = false; if (rec && wantListen && running && !needTap && !listening) { try { rec.start(); dlog('Erkennung nach Sprachausgabe neu'); } catch (x) {} } }
       setTimeout(flushMuted, GRACE + 20); setMic(); res();
     };
     const t = setTimeout(fin, 1800 + text.length * 120);
     u.onend = fin; u.onerror = fin;
     speaking = true; setMic(); dlog('Sprachausgabe: ' + text);
     // iPhone: Mikrofon und Sprachausgabe vertragen sich nicht. Erkennung vorher stoppen, danach neu starten.
-    micOff();
+    if (IS_IOS && rec && !dict && wantListen) { micOffForSpeech = true; try { rec.abort(); } catch (x) {} }
     synth.speak(u);
   });
 }
@@ -1683,7 +1654,7 @@ function armSilence() {
     if (!running || phase !== 'answer' || cur !== item) return;
     if (isMuted() || pending || pendingTimer) { armSilence(); return; }
     // Safari hört manchmal still auf, Ergebnisse zu liefern: nach 2 stillen Karten Erkennung neu starten
-    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); if (listening) { try { rec.abort(); } catch (x) {} } else tryStart(0); } }
+    if (rec && !dict && Date.now() - lastResultAt > set.waitSec * 1000) { if (++silentMisses >= 1) { silentMisses = 0; dlog('Neustart (keine Worte)'); try { rec.abort(); } catch (x) {} } }
     accept(false, '');
   }, set.waitSec * 1000 * (item.deck === 'p' ? 2 : 1));
 }
@@ -1714,14 +1685,12 @@ async function next() {
   updateStats();
   const myItem = cur;
   if (set.speakDe) await say(cur.de.replace(/\s*\((.+)\)/, ', $1'), 'de');
-  micOn();
   if (cur === myItem && phase === 'answer') { if (!firstHeardAt) readyAt = Date.now(); armSilence(); }
 }
 async function accept(ok, heard) {
   if (phase !== 'answer' || !cur) return;
   phase = 'feedback'; clearTimeout(pendingTimer); pendingTimer = null; pending = ''; clearTimeout(silenceTimer);
   const item = cur; const tok = ++advanceToken;
-  micOff(); // iPhone: Mikrofon schon jetzt freigeben, damit das Vorlesen ohne Verzögerung startet
   const rt = ok ? Math.max(0, (firstHeardAt || Date.now()) - readyAt) : null;
   grade(item.id, ok, rt);
   prevCard = { en: item.en, item, at: Date.now() };
@@ -1739,8 +1708,8 @@ async function accept(ok, heard) {
     if (heard) showHeard(heard, false);
     recentWrong.unshift(item);
     updateStats(); renderRecent();
-    await say(item.en[0], 'en', true);
-    await sleep(IS_IOS ? 120 : 300);
+    await say(item.en[0], 'en');
+    await sleep(300);
   }
   if (running && tok === advanceToken) next();
 }
@@ -1787,14 +1756,12 @@ function start() {
   if (running) return;
   try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume && actx.resume(); } catch (e) {}
   running = true; session.since = Date.now();
-  grabHold();
   startListening();
   $('startBtn').textContent = 'Pause';
   requestWake();
   setMic(); next();
 }
 function pause() {
-  micOffForSpeech = false; releaseHold();
   if (running) session.activeMs += Date.now() - session.since;
   running = false; phase = 'idle';
   stopListening();
