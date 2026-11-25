@@ -134,7 +134,7 @@ kbd{font-family:inherit;border:1px solid var(--line);border-radius:5px;padding:0
 
   <section class="talk" id="talk" hidden>
     <h2>Mit Claude Englisch sprechen</h2>
-    <p class="muted">Claude spielt einen amerikanischen Kollegen, redet mit dir und verbessert kurz, wenn etwas nicht stimmt. Das läuft im Sprachmodus der Claude-App, ohne Zusatzkosten.</p>
+    <p class="muted">„Vokabel-Drill“: Claude fragt dich 40 Wörter ab, zuerst die, die du gerade übst, dann neue. Läuft im Sprachmodus der Claude-App und hält im Auto die Verbindung. Die anderen Situationen: Claude spielt einen amerikanischen Kollegen, redet mit dir und verbessert kurz, wenn etwas nicht stimmt. Das läuft im Sprachmodus der Claude-App, ohne Zusatzkosten.</p>
     <div class="scen" id="scen" role="radiogroup" aria-label="Situation"></div>
     <div class="row">
       <a class="primary linkbtn" id="talkOpen" href="https://claude.ai/new" target="_blank" rel="noopener">In Claude öffnen</a>
@@ -1817,13 +1817,28 @@ if (set.drive) setDrive(true);
 /* ---------- Übungsart und Gesprächsmodus ---------- */
 const TALK_BASE = "Let's practice spoken American English. I'm a German native speaker and I'm getting ready to work with American colleagues. My level is intermediate. Rules: Speak natural, casual American English at a normal pace. Keep each of your turns short, one to three sentences, and end with a question so I keep talking. If I make a clear mistake, first say the corrected version very briefly (\"Better: ...\"), then continue the conversation. If I use a German word because I don't know the English one, tell me the English word and continue. Don't explain grammar unless I ask. ";
 const SCEN = [
+  ['drill', 'Vokabel-Drill (Auto)', ''],
   ['smalltalk', 'Smalltalk mit Kollegen', "Role: You are Mike, an American coworker from Chicago. It's Monday morning and we're chatting by the coffee machine. Start with a casual greeting and ask about my weekend."],
   ['meeting', 'Meeting', "Role: You are Sarah, a project manager in Austin, running a short project status meeting with me. Ask me for updates, push back politely, and talk about deadlines and next steps. Start the meeting."],
   ['call', 'Video-Call', "Role: You are Jason, a colleague from our US office, on a video call with me. We need to find a date for a workshop and agree on who prepares what. Start the call."],
   ['lunch', 'Mittagessen', "Role: You are Emily, a new American colleague. We're having lunch together and getting to know each other: hobbies, family, travel, food. Start the conversation."],
   ['free', 'Freies Thema', "Role: You are a friendly American conversation partner. Let me choose the topic. Start by asking what I'd like to talk about."]
 ];
-function talkPrompt() { const sc = SCEN.find(x => x[0] === set.scenario) || SCEN[0]; return TALK_BASE + sc[2]; }
+function drillList() {
+  const now = Date.now(), pool = VOCAB.filter(v => (v.deck === 'w' || v.deck === 't') && !isBlocked(v.id));
+  const st = id => S.words[id];
+  const learning = pool.filter(v => st(v.id) && st(v.id).learn);
+  const due = pool.filter(v => st(v.id) && !st(v.id).learn && st(v.id).due <= now).sort((a, b) => st(a.id).due - st(b.id).due);
+  const fresh = S.order.map(id => byId.get(id)).filter(v => v && (v.deck === 'w' || v.deck === 't') && !st(v.id) && !isBlocked(v.id));
+  const out = [], seen = new Set();
+  for (const v of [...learning, ...due, ...fresh]) { if (seen.has(v.id)) continue; seen.add(v.id); out.push(v); if (out.length >= 40) break; }
+  return out;
+}
+function drillPrompt() {
+  const list = drillList().map(v => v.de.replace(/\s*\(.+\)/, '') + ' = ' + v.en.slice(0, 3).join(' / ')).join('\n');
+  return "Let's do a fast spoken vocabulary drill in voice mode. I'm German and I'm learning American English. Rules: Say one German word from the list below, then wait for my English answer. If my answer is correct (a synonym also counts), say only \"Right.\" and immediately say the next German word. If it's wrong, or I say \"pass\", say only the correct American English word once, then the next German word. No other comments, no explanations, keep it fast. Words I got wrong come back after three to five other words. Go through the list in random order. When I say \"stop\", tell me which words I missed. Start right away with the first word.\n\nList (German = English):\n" + list;
+}
+function talkPrompt() { if (set.scenario === 'drill') return drillPrompt(); const sc = SCEN.find(x => x[0] === set.scenario) || SCEN[0]; return TALK_BASE + sc[2]; }
 function renderTalk() {
   $('scen').innerHTML = SCEN.map(x => '<button type="button" role="radio" data-scen="' + x[0] + '" aria-checked="' + (x[0] === set.scenario) + '">' + x[1] + '</button>').join('');
   const p = talkPrompt(); $('talkPrompt').value = p;
@@ -1852,7 +1867,8 @@ function setMode(m) {
   session = { right: 0, wrong: 0, activeMs: 0, since: 0 };
   updateStats();
 }
-document.querySelectorAll('.tabs [data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll('.tabs [data-mode]').forEach(b => b.onclick = () => { setMode(b.dataset.mode); if (b.dataset.mode === 'c') renderTalk(); });
+$('talkOpen').addEventListener('click', () => { $('talkOpen').href = 'https://claude.ai/new?q=' + encodeURIComponent(talkPrompt()); });
 renderTalk(); setMode(set.mode || 'w');
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { running ? pause() : null; }
